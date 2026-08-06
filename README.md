@@ -83,12 +83,37 @@ The team is authored to run across AI coding tools:
 - `AGENTS.md` is the canonical contract, imported into Claude Code via `CLAUDE.md`
 - Added adapters simply re-render these sources; never fork the content
 
+## Initialize a project
+
+This repo is the **baseline** — the canonical team definition that other projects install and
+upgrade from. To wire a project into the team:
+
+1. **Make the baseline reachable.** Clone it (or have it on disk) so the team files are
+   available, e.g. `git clone git@github.com:jlowell000/taskcorps.git`.
+2. **Run `/scrum-init`.** In the target project, run `/scrum-init <path>` (defaults to the
+   current directory). The `pm` agent:
+   - **copies the team** — `AGENTS.md`, `CLAUDE.md`, `opencode.json`, `.opencode/` (agents,
+     skills, commands) — asking before overwriting anything in the project;
+   - **discovers** the project into `.team/context/`: `stack.md` (language, runtime, package
+     manager), `test-harness.md` (verified test command), `git.md`;
+   - **seeds** the `.team/` skeleton (`backlog.md`, `status.md`, `context/`, `checkpoints/`,
+     `archive/`, `proposals/`, `federation/`) and appends `.team/` to the project's `.gitignore`;
+   - **establishes a green baseline**: gets the existing suite green first; if there is no test
+     harness, seeds backlog item `T0 — establish minimal test harness` as a dependency of all
+     feature work;
+   - **registers** the project in the baseline registry and takes a catalog snapshot so future
+     upgrades diff cleanly.
+3. **Run the team.** `/scrum "<first objective>"`, then `/status`, `/retro`, and the federation
+   commands (`/federation-scan`, `/federation-absorb`) to pull baseline upgrades back into the
+   project.
+
 ## Get started
 
-1. `/scrum-init .` — self-initialize this repo (dogfood the team)
-2. `/scrum "pick a real first feature"` — run the team
-3. `/retro` — and iterate using the team's own learnings
+- **Self-host the team**: `/scrum-init .` in this repo (dogfooding).
+- **Run a feature**: `/scrum "pick a real first feature"`.
+- **Improve the team**: `/retro` after each run.
+- **Bring the team to a project**: see [Initialize a project](#initialize-a-project).
 
 ## License
 
-Private/undecided — decide before redistribution.
+MIT — Copyright (c) 2026 jlowell000. See [LICENSE](LICENSE).
