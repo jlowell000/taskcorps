@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "pm",
+  "compaction": {
+    "auto": true,
+    "tail_turns": 15
+  },
+  "instructions": ["AGENTS.md"],
+  "permission": {
+    "external_directory": {
+      "*": "ask"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+# Team runtime workspace
+
+## Ephemeral run state — never track handoffs, checkpoints, proposals
+.team/*
+
+## Federation durable state — TRACKED (survives clones; versioned history)
+!.team/federation/
+.team/federation/*
+!.team/federation/registry.md
+!.team/federation/decisions.md
+!.team/federation/changelog.md
+!.team/federation/releases/
+!.team/federation/releases/**
+!.team/federation/conflicts/
+!.team/federation/conflicts/**
+
+## Federation staging — ignored (read-only copies, per-project snapshot bloat)
+.team/federation/inbox/
+.team/federation/catalog/
+
+# Editor / OS noise
+.DS_Store
+*.swp
