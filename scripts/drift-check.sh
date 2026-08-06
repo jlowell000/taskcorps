@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# drift-check.sh — reconcile the local baseline's `main` with upstream `origin/main`.
+# drift-check.sh — reconcile the local working branch with upstream origin/<detected-default>.
 #
 # The local repo is the baseline's working source of truth, but it may carry local context
-# on `main` that upstream (origin/main) doesn't have, and may lag behind new upstream
-# releases. This script classifies the relationship so the federation agent can decide
-# whether a sync is needed and how safe it is.
+# on the working branch that upstream (origin/<detected-default>) doesn't have, and may lag
+# behind new upstream releases. This script classifies the relationship so the federation
+# agent can decide whether a sync is needed and how safe it is.
 #
-#   LOCAL_BRANCH (default: current branch)  vs  REMOTE (default: origin/main)
+# Local side (precedence): LOCAL_BRANCH > WORKING_BRANCH > current branch.
+# Remote side (precedence): REMOTE (explicit) > origin/<detected-default>.
+# The default branch name is detected via scripts/default-branch.sh, never hardcoded.
 #
 # Exit codes:
 #   0  CLEAN or AHEAD (safe; nothing blocking)
-#   1  BEHIND or DIVERGED — origin has changes `main` does not (release needed)
+#   1  BEHIND or DIVERGED — origin has changes the working branch does not (release needed)
 #   2  dirty working tree (baseline-owned tracked files modified, uncommitted)
-#   3  ambiguous (no upstream / fetch failed)
+#   3  ambiguous (no upstream / cannot determine default / working branch missing)
 #
 # Never modifies anything: fetch is the only network/disk write, and it only updates git's
 # remote-tracking refs.
@@ -21,10 +23,18 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-BRANCH="${LOCAL_BRANCH:-$(git symbolic-ref --short HEAD 2>/dev/null || echo main)}"
-REMOTE="${REMOTE:-origin/main}"
-
 note() { printf '  %s\n' "$*"; }
+
+BRANCH="${LOCAL_BRANCH:-${WORKING_BRANCH:-$(git symbolic-ref --short HEAD 2>/dev/null || echo main)}}"
+if ! DEFAULT_B="$(scripts/default-branch.sh)"; then
+  note "warn: cannot determine default branch"
+  exit 3
+fi
+REMOTE="${REMOTE:-origin/${DEFAULT_B}}"
+if ! git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
+  note "warn: working branch '$BRANCH' does not exist locally"
+  exit 3
+fi
 
 echo "== drift-check: '$BRANCH' vs '$REMOTE' =="
 

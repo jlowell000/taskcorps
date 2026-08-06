@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# sync-origin.sh — fold upstream `origin/main` changes into the local baseline's `main`
-# without clobbering local context. AGENTS.md is merged surgically (preserving the local
-# tail below the BASELINE-OWNED CONTENT marker); other baseline-owned files merge normally,
-# with residual conflicts surfaced for per-file human resolution.
+# sync-origin.sh — fold upstream `origin/<detected-default>` changes into the local working
+# branch without clobbering local context. AGENTS.md is merged surgically (preserving the
+# local tail below the BASELINE-OWNED CONTENT marker); other baseline-owned files merge
+# normally, with residual conflicts surfaced for per-file human resolution.
+#
+# Local side (precedence): LOCAL_BRANCH > WORKING_BRANCH > current branch.
+# Remote side (precedence): REMOTE (explicit) > origin/<detected-default>.
+# The default branch name is detected via scripts/default-branch.sh, never hardcoded.
 #
 #   sync-origin.sh [--dry] [--yes]
 #
@@ -18,8 +22,19 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-BRANCH="${LOCAL_BRANCH:-$(git symbolic-ref --short HEAD 2>/dev/null || echo main)}"
-REMOTE="${REMOTE:-origin/main}"
+note()  { printf '  %s\n' "$*"; }
+warn()  { printf '  %s\n' "$*" >&2; }
+
+BRANCH="${LOCAL_BRANCH:-${WORKING_BRANCH:-$(git symbolic-ref --short HEAD 2>/dev/null || echo main)}}"
+if ! DEFAULT_B="$(scripts/default-branch.sh)"; then
+  warn "cannot determine default branch"
+  exit 3
+fi
+REMOTE="${REMOTE:-origin/${DEFAULT_B}}"
+if ! git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
+  warn "working branch '$BRANCH' does not exist locally"
+  exit 3
+fi
 ME="$(basename "$0")"
 DRY=""; AUTO=""
 for a in "$@"; do
@@ -27,9 +42,6 @@ for a in "$@"; do
     --dry) DRY=1;; --yes) AUTO=1;; *) warn "unknown arg: $a";;
   esac
 done
-
-note()  { printf '  %s\n' "$*"; }
-warn()  { printf '  %s\n' "$*" >&2; }
 run() { # run CMD...  ; no-op when --dry
   if [ -n "$DRY" ]; then note "(dry) $*"; else "$@"; fi
 }
@@ -88,16 +100,16 @@ fi
 
 # --- 2. merge the rest of the baseline on top of local main ----------------
 if [ -n "$DRY" ]; then
-  note "(dry) would run 'git merge origin/main' for the rest of the baseline"
+  note "(dry) would run 'git merge $REMOTE' for the rest of the baseline"
   note "sync complete (dry)."
   exit 0
 fi
-if ! ask "run 'git merge origin/main' for the rest of the baseline"; then
-  note "declined merge; leaving origin/main changes unapplied"; exit 0
+if ! ask "run 'git merge $REMOTE' for the rest of the baseline"; then
+  note "declined merge; leaving $REMOTE changes unapplied"; exit 0
 fi
 if git rev-list "$(git merge-base HEAD "$REMOTE")..$REMOTE" --count >/dev/null 2>&1 \
    && [ "$(git rev-list HEAD..$REMOTE --count)" -gt 0 ]; then
-  run git merge --no-ff "$REMOTE" -m "sync: merge origin/main into baseline ($(date +%F))"
+  run git merge --no-ff "$REMOTE" -m "sync: merge $REMOTE into $BRANCH ($(date +%F))"
 fi
 
 # --- 3. detect unresolved merge conflicts ------------------------------------
