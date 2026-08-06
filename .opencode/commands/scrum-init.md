@@ -13,3 +13,9 @@ Before starting, tell me: files it will add/overwrite (diff first), the discover
 record, and anything that looks risky (no existing tests, red suite, non-git tree). If no test
 harness exists, plan to seed a `T0 — establish minimal test harness` backlog item as a
 dependency for all feature work. Do not destructively overwrite anything without asking me first.
+
+**Git-ignore of agent files:** in a non-baseline repo, default to NOT committing the agent
+files (`AGENTS.md`, `CLAUDE.md`, `opencode.json`, `.opencode/`) via `scripts/ignore-team.sh
+--ignore` — the remote may not want the team tooling. Offer `--track` if the user prefers them
+committed. In the baseline repo itself they ARE tracked; do not ignore them there. Ask before
+changing the target's `.gitignore`.

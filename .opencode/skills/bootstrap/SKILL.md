@@ -23,6 +23,12 @@ Initialize a project (default: current working directory) as a scrum team partic
 4. **Seed the workspace** — create the `.team/` skeleton (`backlog.md`, `status.md`,
    `context/`, `checkpoints/`, `archive/`, `proposals/`, `federation/`) from the
    `.opencode/templates/` skeletons and append `.team/` to `.gitignore`.
+   **Agent files are optionally git-ignored.** In a **non-baseline** repo, default to NOT
+   committing the agent files (`AGENTS.md`, `CLAUDE.md`, `opencode.json`, `.opencode/`) — the
+   project's remote may not want the team tooling. Run `scripts/ignore-team.sh --ignore` (the
+   default) to append those rules; offer `--track` if the user wants them committed. In the
+   **baseline** repo itself the agent files ARE tracked (they are the source of truth) — do not
+   ignore them there. Ask the user once if unsure; never silently change their `.gitignore`.
 5. **Baseline run** — delegate to `tester` to get the *existing* suite green before any
    feature work. Record that result in `.team/context/test-harness.md`. If the suite is red
    on init, that's a finding for the first backlog, not a blocker for init. **If discovery
