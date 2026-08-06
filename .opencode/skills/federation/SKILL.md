@@ -25,6 +25,32 @@ The **current baseline version** is the top line of `changelog.md` (`CURRENT_VER
 `federation-release` asserts every registered project's `catalog/<project>/<version>/` is ≤
 `CURRENT_VERSION` before applying; a release that forgets the bump is drift, not a release.
 
+## AGENTS.md appends (child-team custom content)
+
+Consumers keep project-specific additions to their `AGENTS.md` **strictly below** the
+`BASELINE-OWNED CONTENT` marker that ends the baseline-owned section. All AGENTS.md writes to a
+consumer go through `scripts/merge-agents.sh <baseline> <prev-catalog-snapshot> <consumer> <out>`:
+- The release replaces only baseline-owned content **above** the marker; the consumer's tail
+  below it is preserved verbatim.
+- A consumer with no marker that is byte-identical to its catalog snapshot is a pristine
+  baseline copy → adopt the new release wholesale. Anything else without a marker cannot be
+  split reliably → it is a **conflict**, written to `conflicts/`, never silently overwritten.
+- `scripts/install-global.sh` uses the same merge for a `type: global` host's AGENTS.md and
+  snapshots the **merged** file (not the raw release) into the catalog so drift diffs stay true.
+
+## Drift (local `main` ↔ `origin/main`)
+
+The local baseline repo rides on `main` and carries local-context changes; upstream
+`origin/main` is fetched, never forced over local work. Drift is reconciled per file:
+- `scripts/drift-check.sh` classifies `main` vs `origin/main` (CLEAN/AHEAD/BEHIND/DIVERGED),
+  checks for uncommitted baseline-owned changes, and exits non-zero when behind/dirty so a
+  release can be gated.
+- `scripts/sync-origin.sh` folds `origin/main` in: AGENTS.md via `merge-agents.sh`, other files
+  via a normal `git merge`, **prompting per file** (`--yes` to skip prompts). True file
+  conflicts land in `conflicts/`.
+- A drift sync that changes baseline-owned content must **also bump the version + changelog** —
+  otherwise it is drift, not a release.
+
 ## Registration (consumer ↔ baseline link)
 
 Every project initialized by `scrum-init` carries `.team/federation/baseline.md` recording its
@@ -67,8 +93,9 @@ the **released version it last received** — never un-released working-tree HEA
 
 For each consumer in `registry.md` (project or global host — see the global-host rules above):
 1. Compute the delta between `catalog/<project>/<version>/` and the current release.
-2. Apply the files that the project has NOT locally modified. Update the catalog to the new
-   version.
+2. Apply the files that the project has NOT locally modified. **AGENTS.md is always written via
+   `scripts/merge-agents.sh`** (baseline-owned content merged atop the project's preserved tail).
+   Update the catalog to the new version.
 3. Locally modified files are **not overwritten**: write the conflict (+ the baseline's new
    version of the file) into `conflicts/` and flag for the human to reconcile.
 4. Record the applied version + date in `registry.md`.

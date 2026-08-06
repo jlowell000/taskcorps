@@ -42,12 +42,13 @@ Run state is gitignored; federation durable state is tracked (see below).
   proposals/            # retro output -> changes for the team itself (human-approved only)
   federation/           # baseline sync state: registry, inbox, decisions, changelog, catalog, conflicts
 ```
-Git tracking (`.gitignore`): ephemeral run state — `backlog.md`, `status.md`, `context/`,
-`tasks/`, `checkpoints/`, `archive/`, `proposals/` — is ignored. Federation **durable**
-state — `registry.md`, `decisions.md`, `changelog.md`, `releases/`, `conflicts/` — is
-tracked so the baseline's versioned history survives clones; `inbox/` and `catalog/` stay
-ignored (staging + per-project snapshot bloat). This repo also runs
-`scripts/validate-team.sh` to self-check baseline consistency; run it before releases.
+Git tracking (`.gitignore`): **all of `.team/` is ignored and never committed.** Run state
+(`backlog.md`, `status.md`, `context/`, `tasks/`, `checkpoints/`, `archive/`, `proposals/`) and
+federation state (`registry.md`, `decisions.md`, `changelog.md`, `releases/`, `conflicts/`,
+`inbox/`, `catalog/`) are all local/ephemeral — they survive only on this machine, not clones.
+The baseline's canonical files live in `.opencode/`; release snapshots are regenerated, not
+versioned in git. This repo also runs `scripts/validate-team.sh` to self-check baseline
+consistency; run it before releases.
 
 Canonical skeletons for every document above live in `.opencode/templates/` (baseline-owned,
 versioned, copied at `scrum-init`).
@@ -132,8 +133,25 @@ and upgrade from. The `federation` agent and skill implement the loop: registere
 adopts (with human approval) generalized versions, then disseminates them back. Never change
 the baseline without a `federation/changelog` entry and a release bump.
 
+- **Project appends**: child teams keep local, project-specific additions to `AGENTS.md`
+  **below** the baseline-owned marker at the end of this file. Releases replace only
+  baseline-owned content above the marker (`scripts/merge-agents.sh`) and preserve the tail.
+- **Drift**: the local repo's baseline rides on `main` and reconciles upstream `origin/main`
+  changes into it via `scripts/drift-check.sh` + `scripts/sync-origin.sh` (per-file prompts).
+  A drift sync that changes baseline-owned content must also bump the version + changelog.
+
 ## 9. Agent instructions
 
 - Keep every file small, documented, and consistent with the templates.
 - Never apply retro proposals without the human reviewing them; never release the baseline un-confirmed.
 - Use the team skills (`handoff`, `context-management`, `testing`, `federation`, …).
+
+---
+
+<!-- ======================================================================
+     BASELINE-OWNED CONTENT — do not edit above this marker.
+     Project/team-specific additions belong BELOW this line only.
+     The federation release surgically replaces baseline-owned content
+     (everything above) and preserves everything below. Local appends and
+     drift reconciliation (<main> vs <origin/main>) rely on this boundary.
+     ====================================================================== -->

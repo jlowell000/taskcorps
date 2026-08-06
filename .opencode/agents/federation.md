@@ -32,10 +32,19 @@ project initialized with `scrum-init`.
    - Compute the delta between `catalog/<consumer>/<version>/` and the current release.
    - Write the delta files into the consumer; if a file was locally modified by that consumer,
      do not overwrite — write the conflict into `.team/federation/conflicts/` and flag it.
+   - **AGENTS.md is always written via `scripts/merge-agents.sh`** (baseline-owned content
+     merged above the `BASELINE-OWNED CONTENT` marker, project tail preserved below); only if
+     the merge fails does it become a `conflicts/` entry.
    - For a `global` host, never write the user-owned config set (`opencode.json[c]`,
      `.gitignore`, `package*.json`, `node_modules/`); they are permanent excludes.
    - Update the consumer's recorded version in `registry.md` and the catalog snapshot.
-5. **Never mutate a project without an `external_directory` write approved by the human, and
-   never alter the baseline outside the absorb flow.**
+5. **Drift (local `main` ↔ `origin/main`).** The local baseline's `main` carries local-context
+   changes; upstream is `origin/main`. Use `scripts/drift-check.sh` to classify CLEAN/AHEAD/
+   BEHIND/DIVERGED and gate; use `scripts/sync-origin.sh` to fold upstream in **per file**
+   (prompting), routing true file conflicts to `conflicts/` and running AGENTS.md through
+   `merge-agents.sh`. A drift sync that changes baseline-owned content must also bump the
+   version + changelog.
+6. **Never mutate a project without an `external_directory` write approved by the human, and
+   never alter the baseline outside the absorb/drift flow.**
 
 Use the `federation` skill for the full procedure.

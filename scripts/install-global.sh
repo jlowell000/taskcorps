@@ -42,7 +42,18 @@ copy_to() { # src_file dst_dir
 }
 
 # AGENTS.md + CLAUDE.md at the global root
-copy_to "$REL/AGENTS.md"   "$GLOBAL"
+# AGENTS.md is merged surgically so a global host's local appends (below the BASELINE-OWNED
+# CONTENT marker) survive release updates; CLAUDE.md is copied wholesale (tiny, + import-only).
+if [ -f "$GLOBAL/AGENTS.md" ]; then
+  if scripts/merge-agents.sh "$REL/AGENTS.md" "" "$GLOBAL/AGENTS.md" "$GLOBAL/AGENTS.md.new"; then
+    mv -f "$GLOBAL/AGENTS.md.new" "$GLOBAL/AGENTS.md"
+    note "  AGENTS.md: surgically merged (local tail preserved)"
+  else
+    note "  AGENTS.md: could not auto-merge local edits; leaving in place and writing the release to AGENTS.md.new"
+  fi
+else
+  cp -p "$REL/AGENTS.md" "$GLOBAL"
+fi
 copy_to "$REL/CLAUDE.md"   "$GLOBAL"
 
 # agents
@@ -72,11 +83,12 @@ else
   note "  registry: registered host '$GID' @ v$CUR"
 fi
 
-# catalog diff-base (gitignored)
+# catalog diff-base (gitignored) — snapshot what was ACTUALLY installed, so future drift
+# diffs reflect real local edits (i.e. the merged AGENTS.md, not the raw release).
 CAT=".team/federation/catalog/$GID/v$CUR"
 rm -rf "$CAT"
 mkdir -p "$CAT"
-cp -p "$REL/AGENTS.md" "$REL/CLAUDE.md" "$CAT/" 2>/dev/null
+cp -p "$GLOBAL/AGENTS.md" "$REL/CLAUDE.md" "$CAT/" 2>/dev/null
 cp -r "$REL/.opencode" "$CAT/" 2>/dev/null
 note "  catalog: wrote snapshot v$CUR ($CAT)"
 
