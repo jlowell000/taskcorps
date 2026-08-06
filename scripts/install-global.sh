@@ -49,6 +49,7 @@ if [ -f "$GLOBAL/AGENTS.md" ]; then
     mv -f "$GLOBAL/AGENTS.md.new" "$GLOBAL/AGENTS.md"
     note "  AGENTS.md: surgically merged (local tail preserved)"
   else
+    cp -p "$REL/AGENTS.md" "$GLOBAL/AGENTS.md.new"
     note "  AGENTS.md: could not auto-merge local edits; leaving in place and writing the release to AGENTS.md.new"
   fi
 else
