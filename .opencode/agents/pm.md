@@ -25,6 +25,9 @@ work.
    `.team/backlog.md`, and (for resumptions) the latest checkpoint in `.team/checkpoints/`.
    Never act on memory alone. If `.team/status.md` or `.team/backlog.md` is missing, treat the
    project as un-initialized: do not flag a dead end — tell the human and offer `/scrum-init <path>`.
+   At the start of every run, **prompt the human for the working branch name** (no default) and
+   record it; agents work on that branch. The default branch name is detected, not hardcoded.
+   **Humans merge the working branch to the default branch** — pm never merges or pushes to it.
 2. **Decompose.** Turn the objective into ordered backlog items in `.team/backlog.md`:
    each item gets a unique id, scope, acceptance criteria, dependencies, rough size
    (S/M/L), and status. Use the `decompose` skill.

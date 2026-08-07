@@ -38,18 +38,21 @@ consumer go through `scripts/merge-agents.sh <baseline> <prev-catalog-snapshot> 
 - `scripts/install-global.sh` uses the same merge for a `type: global` host's AGENTS.md and
   snapshots the **merged** file (not the raw release) into the catalog so drift diffs stay true.
 
-## Drift (local `main` ↔ `origin/main`)
+## Drift (working branch ↔ detected default branch)
 
-The local baseline repo rides on `main` and carries local-context changes; upstream
-`origin/main` is fetched, never forced over local work. Drift is reconciled per file:
-- `scripts/drift-check.sh` classifies `main` vs `origin/main` (CLEAN/AHEAD/BEHIND/DIVERGED),
-  checks for uncommitted baseline-owned changes, and exits non-zero when behind/dirty so a
-  release can be gated.
-- `scripts/sync-origin.sh` folds `origin/main` in: AGENTS.md via `merge-agents.sh`, other files
-  via a normal `git merge`, **prompting per file** (`--yes` to skip prompts). True file
-  conflicts land in `conflicts/`.
+The local baseline repo rides on a human-defined **working branch** (`WORKING_BRANCH` env, or
+ the current branch) and carries local-context changes; upstream is the **detected default
+ branch** (`scripts/default-branch.sh`), fetched and never forced over local work. Drift is
+ reconciled per file:
+- `scripts/drift-check.sh` classifies the working branch vs `origin/<detected-default>`
+  (CLEAN/AHEAD/BEHIND/DIVERGED), checks for uncommitted baseline-owned changes, and exits
+  non-zero when behind/dirty so a release can be gated.
+- `scripts/sync-origin.sh` folds `origin/<detected-default>` in: AGENTS.md via
+  `merge-agents.sh`, other files via a normal `git merge`, **prompting per file** (`--yes` to
+  skip prompts). True file conflicts land in `conflicts/`.
 - A drift sync that changes baseline-owned content must **also bump the version + changelog** —
   otherwise it is drift, not a release.
+- **Humans merge the working branch to the default branch; the agent never pushes to it.**
 
 ## Registration (consumer ↔ baseline link)
 

@@ -136,9 +136,14 @@ the baseline without a `federation/changelog` entry and a release bump.
 - **Project appends**: child teams keep local, project-specific additions to `AGENTS.md`
   **below** the baseline-owned marker at the end of this file. Releases replace only
   baseline-owned content above the marker (`scripts/merge-agents.sh`) and preserve the tail.
-- **Drift**: the local repo's baseline rides on `main` and reconciles upstream `origin/main`
-  changes into it via `scripts/drift-check.sh` + `scripts/sync-origin.sh` (per-file prompts).
-  A drift sync that changes baseline-owned content must also bump the version + changelog.
+- **Working branch**: at the start of each run the human is prompted for the **working branch**
+   name (no default); agents work on it. The **default branch** name is **detected**, never
+   hardcoded (`scripts/default-branch.sh`).
+- **Drift**: the local repo's baseline rides on the working branch and reconciles the detected
+   default branch (`origin/<default>`) into it via `scripts/drift-check.sh` +
+   `scripts/sync-origin.sh` (per-file prompts). A drift sync that changes baseline-owned content
+   must also bump the version + changelog. **Humans merge the working branch to the default
+   branch; agents never push to it.**
 
 ## 9. Agent instructions
 

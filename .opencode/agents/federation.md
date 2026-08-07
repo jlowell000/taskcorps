@@ -38,12 +38,14 @@ project initialized with `scrum-init`.
    - For a `global` host, never write the user-owned config set (`opencode.json[c]`,
      `.gitignore`, `package*.json`, `node_modules/`); they are permanent excludes.
    - Update the consumer's recorded version in `registry.md` and the catalog snapshot.
-5. **Drift (local `main` ↔ `origin/main`).** The local baseline's `main` carries local-context
-   changes; upstream is `origin/main`. Use `scripts/drift-check.sh` to classify CLEAN/AHEAD/
-   BEHIND/DIVERGED and gate; use `scripts/sync-origin.sh` to fold upstream in **per file**
-   (prompting), routing true file conflicts to `conflicts/` and running AGENTS.md through
-   `merge-agents.sh`. A drift sync that changes baseline-owned content must also bump the
-   version + changelog.
+5. **Drift (working branch ↔ detected default branch).** The local baseline's working branch
+   (the human-defined branch the run is on) carries local-context changes; upstream is the
+   detected default branch (`scripts/default-branch.sh`). Use `scripts/drift-check.sh` to
+   classify CLEAN/AHEAD/BEHIND/DIVERGED and gate; use `scripts/sync-origin.sh` to fold upstream
+   in **per file** (prompting), routing true file conflicts to `conflicts/` and running AGENTS.md
+   through `merge-agents.sh`. A drift sync that changes baseline-owned content must also bump
+   the version + changelog. **Humans merge the working branch to the default branch; the agent
+   never pushes to it.**
 6. **Never mutate a project without an `external_directory` write approved by the human, and
    never alter the baseline outside the absorb/drift flow.**
 
