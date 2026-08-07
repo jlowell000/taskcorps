@@ -35,6 +35,16 @@ if ! git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
   warn "working branch '$BRANCH' does not exist locally"
   exit 3
 fi
+# --- guard: resolved local branch must be the checked-out HEAD ---------------
+# sync-origin merges into HEAD (the checked-out branch), never into $BRANCH. If a caller
+# overrides LOCAL_BRANCH/WORKING_BRANCH to a locally-existing but non-checked-out branch, the
+# merge below would silently target the wrong branch. Refuse loudly instead.
+CURRENT="$(git symbolic-ref --short HEAD 2>/dev/null || echo main)"
+if [ "$BRANCH" != "$CURRENT" ]; then
+  warn "refusing to sync: resolved local branch '$BRANCH' is not the checked-out branch '$CURRENT'"
+  warn "sync-origin merges into HEAD; set WORKING_BRANCH/LOCAL_BRANCH to the checked-out branch, or check it out first."
+  exit 1
+fi
 ME="$(basename "$0")"
 DRY=""; AUTO=""
 for a in "$@"; do

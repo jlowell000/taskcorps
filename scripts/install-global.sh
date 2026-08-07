@@ -77,7 +77,7 @@ REG=".team/federation/registry.md"
 GID="$HOST"
 GID_ESC=$(printf '%s' "$GID" | sed 's/[|]/\\|/g')
 if grep -q "^| global | $GID_ESC |" "$REG"; then
-  sed -i -E "s#^(\| global \| $GID_ESC \| )[^|]*\| v[0-9.]*\|.*#\1 $GLOBAL | v$CUR | —#" "$REG"
+  sed -i -E "s#^(\| global \| $GID_ESC \| )[^|]*\| v[0-9.]* *\|.*#\1 $GLOBAL | v$CUR | —#" "$REG"
   note "  registry: updated host '$GID' -> v$CUR"
 else
   printf '| global | %s | %s | v%s | — |\n' "$GID" "$GLOBAL" "$CUR" >> "$REG"

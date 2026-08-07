@@ -40,7 +40,13 @@ The durable home of all team state is `.team/`. Chat memory is not durable state
      subagents or `explore` and ingest only the compressed answer they return.
 5. **Run hygiene**
    - Tell the human when a session has been running long enough that compaction is likely.
-   - Assert `.team/` is consistent before starting the next stage: read `status.md` first.
+   - **Park incomplete runs.** Whenever a run ends with any task `BLOCKED`, `IN_IMPL`, or
+     `IN_REVIEW`, append a `## Open / parked` section to `status.md` (or refresh the existing
+     one) with one line per parked task:
+     `- <task id> — <stage>: <where its uncommitted edits live>`
+     (e.g. `- 20260807-T3 — IN_IMPL: uncommitted changes in .opencode/…, AGENTS.md`).
+     A fresh pm reads this section first on resume and either resumes, parks, or reverts —
+     never guesses.
 
 ## Anti-patterns to avoid
 

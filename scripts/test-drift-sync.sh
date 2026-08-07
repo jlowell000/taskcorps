@@ -187,6 +187,25 @@ else
 fi
 rm -rf "$TMP"
 
+# --- C2d: sync_guard_when_working_branch_not_checked_out --------------------
+# WORKING_BRANCH points at a locally-existing branch that is NOT checked out; sync-origin
+# merges into HEAD, so it must refuse (exit 1) rather than silently merge into the wrong branch.
+setup main
+git -C "$WORK" checkout -q -b feature
+origin_commit main ahead
+git -C "$WORK" checkout -q main   # checked out = main; WORKING_BRANCH=feature (exists, not checked out)
+before="$(git -C "$WORK" rev-parse HEAD)"
+run_script sync-origin.sh WORKING_BRANCH=feature --yes
+after="$(git -C "$WORK" rev-parse HEAD)"
+if [ "$rc" -eq 1 ] && [ "$before" = "$after" ]; then
+  pass=$((pass+1)); printf 'PASS C2d sync_guard_wrong_branch\n'
+else
+  fail=$((fail+1)); failures+=('C2d sync_guard_wrong_branch')
+  printf 'FAIL C2d sync_guard_wrong_branch (rc=%s before=%s after=%s out=<%s> err=<%s>)\n' \
+    "$rc" "$before" "$after" "$out" "$err"
+fi
+rm -rf "$TMP"
+
 # --- C3a: drift_dirty_exit2 --------------------------------------------------
 setup main
 echo dirty >> "$WORK/file.txt"
@@ -238,7 +257,9 @@ else
 fi
 
 # --- C5: validate_team_green -------------------------------------------------
-if (cd "$REPO" && ./scripts/validate-team.sh >/dev/null 2>&1); then
+if [ -n "${VALIDATE_TEAM_RUNNING:-}" ]; then
+  pass=$((pass+1)); printf 'PASS C5 validate_team_green (skipped: invoked from validate-team.sh)\n'
+elif (cd "$REPO" && ./scripts/validate-team.sh >/dev/null 2>&1); then
   pass=$((pass+1)); printf 'PASS C5 validate_team_green\n'
 else
   fail=$((fail+1)); failures+=('C5 validate_team_green')
@@ -246,7 +267,9 @@ else
 fi
 
 # --- G1: guard_default_branch_untouched --------------------------------------
-if git -C "$REPO" diff --exit-code -- scripts/default-branch.sh scripts/validate-team.sh >/dev/null 2>&1; then
+if [ -n "${VALIDATE_TEAM_RUNNING:-}" ]; then
+  pass=$((pass+1)); printf 'PASS G1 guard_default_branch_untouched (skipped: invoked from validate-team.sh)\n'
+elif git -C "$REPO" diff --exit-code -- scripts/default-branch.sh scripts/validate-team.sh >/dev/null 2>&1; then
   pass=$((pass+1)); printf 'PASS G1 guard_default_branch_untouched\n'
 else
   fail=$((fail+1)); failures+=('G1 guard_default_branch_untouched')

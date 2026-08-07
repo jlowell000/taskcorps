@@ -10,7 +10,10 @@ Turn a human objective into backlog items the team can actually execute.
 ## Run identity (pm creates it first)
 
 Every `/scrum` run gets a run id: `YYYYMMDD-<objective-slug>` (e.g. `2026-08-06-auth-refactor`).
-pm writes it into `.team/checkpoints/README.md` (the `latest` pointer) at run start. Task ids
+**The `YYYYMMDD` prefix is taken from today's date (the current calendar year), never a typed
+year from context.** Compute it from the system clock at `/scrum` start. pm prints the computed
+run id (e.g. `2026-08-07-…`) before scaffolding task folders so a stale or typo'd year is
+caught immediately. Task ids
 are **run-scoped**: `<run>-T<n>` (e.g. `2026-08-06-auth-refactor-T1`). This keeps ids
 unambiguous across runs and makes checkpoints/archive references collision-free.
 

@@ -70,6 +70,22 @@ for t in brief spec impl report review; do
   fi
 done
 
+echo "== 6. Standalone throwaway-repo tests =="
+# Run the two offline TDD tests. VALIDATE_TEAM_RUNNING tells them to skip their own
+# "other scripts untouched" guards and their own validate-team.sh invocation, so wiring
+# them here neither trips their guards nor recurses (they must never call validate-team.sh).
+export VALIDATE_TEAM_RUNNING=1
+if scripts/test-default-branch.sh; then
+  ok "test-default-branch.sh"
+else
+  err "test-default-branch.sh failed"
+fi
+if scripts/test-drift-sync.sh; then
+  ok "test-drift-sync.sh"
+else
+  err "test-drift-sync.sh failed"
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then
   echo "validate-team: PASS"

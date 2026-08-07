@@ -95,7 +95,9 @@ check 'C4 no_git_repo_exits_nonzero' 1 '' 'default-branch.sh'
 rm -rf "$dir"
 
 # --- C5: other scripts untouched ------------------------------------------------
-if git -C "$(cd "$(dirname "$0")/.." && pwd)" diff --exit-code -- \
+if [ -n "${VALIDATE_TEAM_RUNNING:-}" ]; then
+  pass=$((pass+1)); printf 'PASS C5 other_scripts_untouched (skipped: invoked from validate-team.sh)\n'
+elif git -C "$(cd "$(dirname "$0")/.." && pwd)" diff --exit-code -- \
     scripts/drift-check.sh scripts/sync-origin.sh scripts/validate-team.sh >/dev/null 2>&1; then
   pass=$((pass+1))
   printf 'PASS C5 other_scripts_untouched\n'
