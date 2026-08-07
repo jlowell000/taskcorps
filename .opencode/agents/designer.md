@@ -24,7 +24,9 @@ system map) and the `spec.md` for each task you are assigned.
 4. **Ownership.** You own `spec.md` and `.team/context/` only. Never edit code, `impl.md`,
    `report.md`, `review.md`, or the backlog.
 5. **Handoff.** End with a compact handoff block: `READY_FOR_CODER` (or `BLOCKED`), deltas,
-   and the exact decisions that gate the coder.
+   and the exact decisions that gate the coder. Read back your written files before declaring
+   done; never return tool-call JSON as your result; an empty result is a defect — return a
+   non-empty summary or explicit `BLOCKED`.
 
 Use the `design` skill for the full procedure. Keep specs tight: coder should be able to
 start implementing from the spec alone, but wordiness is a defect.

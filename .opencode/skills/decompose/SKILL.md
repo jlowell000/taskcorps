@@ -43,6 +43,8 @@ unambiguous across runs and makes checkpoints/archive references collision-free.
    task beyond the cap is marked `QUEUED` (with its dependencies) and stays in `backlog.md`
    for the next run. If the objective decomposes to more than `N` tasks, ask the human once
    before dispatching: "run this batch now, or re-scope?"
+7. **Dispatch budget**: one task per subagent dispatch — never bundle tasks into one prompt.
+   Reference files by path, never inline spec/brief content. Keep dispatches ≤ ~2 KB.
 
 ## Acceptance-criteria rules
 

@@ -16,6 +16,25 @@ Every document in `.team/` is a handoff. The protocol is the only interface betw
   tester → `report.md`; reviewer → `review.md`; pm → `backlog.md` + `status.md` + checkpoints.
 - **Size budget:** keep every handoff to ~1–2 KB. Lead with deltas, not history. Padding is a defect.
 
+## Tight-context contract (all agents)
+
+Subagents run on tight contexts. Follow these rules so a small context never silently fails:
+
+- **Inputs by path, not value.** Dispatches and handoffs reference files by path; read only what
+  you need, in small slices (grep/Read), never whole files into context.
+- **Deltas only.** Return compressed deltas (what changed, files, verdicts, next-owner question)
+  ≤ ~1–2 KB. No full-file echoes, no repeated history.
+- **Never return tool-call JSON as a result.** A final message is a summary (or empty only if
+  the artifact carries everything — then say so explicitly).
+- **Budget guard.** If a task needs more context than you have, stop and report
+  `BLOCKED: needs more context` with the specific file — do not guess or retry with a bigger
+  prompt.
+- **Read-back after every write.** After any Write/Edit, Read the file back and confirm it
+  exists with the expected content before declaring the stage done. A missing artifact is a
+  failure, not a handoff.
+- **Empty results are a defect.** Your final message must be a non-empty summary (or explicit
+  `BLOCKED`). Whitespace-only results are indistinguishable from "did nothing".
+
 ## Handoff block format (append at the end of your artifact)
 
 ```markdown

@@ -28,6 +28,8 @@ the suite is genuinely green, and that the change holds up under edge cases.
 6. **Ownership.** You own `report.md` and may adjust *tests only* (document every change in
    `report.md`). Never edit implementation code, `spec.md`, `impl.md`, or `review.md`.
 7. **Handoff.** End with a compact block: status token, deltas, and the exact open
-   questions that gate the reviewer.
+   questions that gate the reviewer. Read back the files you wrote before declaring done;
+   never return tool-call JSON as your result; an empty result is a defect — return a
+   non-empty summary or explicit `BLOCKED`.
 
 Use the `testing` skill for the full procedure.
