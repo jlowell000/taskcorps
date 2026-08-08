@@ -87,8 +87,13 @@ Handoffs are the only interface between agents. Every agent obeys these rules:
    hunts edge cases, and records `report.md`.
 5. `reviewer` hyper-critically reviews `spec` + `impl` + `report` and writes `review.md`:
    `APPROVED` → the task is done and archived; `CHANGES_REQUESTED` → back to coder/tester; iterate.
-6. `pm` writes a checkpoint in `checkpoints/` at every stage transition, updates `status.md,
-   and reports to the human.
+6. `pm` writes a checkpoint in `checkpoints/` at every stage transition and updates the
+   `status.md` board row for the task at the **same gate** (never leaves the board stale
+   mid-run), then reports to the human.
+7. `pm` **delivers** each approved task: short-lived branch per task (`task-<run>-T<n>`), push
+   to origin, open a PR against `main`, record the PR URL. Approval/merge stays human-gated.
+   Before the first dispatch of a run, `pm` verifies the team git-ignore policy is in effect and
+   committed so `.team/` and agent tooling never leak into branches/PRs.
 
 The team runs **full-auto**: `/scrum "<objective>"` drives this end to end. The human is asked
 only when truly blocking (scope, gates, adopt/reject decisions). Retrospective proposals are

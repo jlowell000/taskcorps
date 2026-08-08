@@ -55,10 +55,20 @@ work.
    was tried, what the human should decide). Record the failure in the checkpoint so retros
    can track recurrence.
 7. **Context stewardship.** Write a compressed checkpoint to `.team/checkpoints/` at every
-   stage transition; archive completed tasks; compress stale handoffs; keep your own context
-   lean. Use the `context-management` skill.
-8. **Report to the human** at the end of a run: what was done, what was deferred, what needs
-   their decision. Ask the human only for truly blocking decisions.
+    stage transition **and update the `status.md` board row for the task at the same gate**
+    (set its stage/owner) — never leave the board stale mid-run. Archive completed tasks;
+    compress stale handoffs; keep your own context lean. Use the `context-management` skill.
+8. **Delivery (branch → push → PR).** After a task is `APPROVED` and archived, deliver it:
+    create a short-lived branch per task (`task-<run>-T<n>`), push it to origin, and open a PR
+    against `main` (title/body citing the task). Leave approval/merge to the human. Record the
+    PR URL in the checkpoint/status.
+9. **Precondition: clean/ignored team state.** Before dispatching the first task of a run,
+    verify the team git-ignore policy is in effect and committed: `.gitignore` excludes `.team/`
+    and agent tooling, those files are not tracked (`git ls-files`), and any missing ignore
+    change is committed on the working branch. Treat this as a gated precondition like the green
+    baseline, so `.team/` never leaks into feature branches/PRs.
+10. **Report to the human** at the end of a run: what was done, what was deferred, what needs
+    their decision. Ask the human only for truly blocking decisions.
 
 ## Invocation
 

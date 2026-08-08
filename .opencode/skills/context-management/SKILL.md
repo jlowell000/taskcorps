@@ -31,6 +31,9 @@ The durable home of all team state is `.team/`. Chat memory is not durable state
    Keep `.team/checkpoints/README.md` updated: current run id, the most recent checkpoint
    path, and the next gated role. Any fresh session reads that README first and resumes
    deterministically.
+   **Pair every checkpoint with a `status.md` board update** at the same gate: set the task's
+   stage/owner (designer→coder→tester→reviewer) so the live board is never stale mid-run. Do
+   not wait until archive to update the board.
 3. **Archiving**
    - On `DONE`, move `.team/tasks/<id>/` into `.team/archive/<year>-<month>/` and keep one
      line in `backlog.md`.
@@ -40,6 +43,12 @@ The durable home of all team state is `.team/`. Chat memory is not durable state
      subagents or `explore` and ingest only the compressed answer they return.
 5. **Run hygiene**
    - Tell the human when a session has been running long enough that compaction is likely.
+   - Assert `.team/` is consistent before starting the next stage: read `status.md` first.
+   - **Precondition: clean/ignored team state.** Before dispatching the first task of a run,
+     verify the team git-ignore policy is in effect and committed: `.gitignore` excludes
+     `.team/` and agent tooling, those files are not tracked (`git ls-files`), and any missing
+     ignore change is committed on the working branch. Treat as a gated precondition like the
+     green baseline, so `.team/` never leaks into feature branches/PRs.
    - **Park incomplete runs.** Whenever a run ends with any task `BLOCKED`, `IN_IMPL`, or
      `IN_REVIEW`, append a `## Open / parked` section to `status.md` (or refresh the existing
      one) with one line per parked task:
