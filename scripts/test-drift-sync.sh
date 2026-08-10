@@ -206,6 +206,71 @@ else
 fi
 rm -rf "$TMP"
 
+# --- C2e: sync with a real conflict records a pair and exits 1 -----------------
+# Local and upstream both modify the same region of file.txt -> git merge leaves UU
+# markers; sync-origin must copy .ours/.upstream pairs and exit 1 (never 0).
+setup main
+local_commit local
+origin_commit main remote
+run_script sync-origin.sh --yes
+if [ "$rc" -eq 1 ] && [ -f "$WORK/.team/federation/conflicts/file.txt.ours" ] \
+   && [ -f "$WORK/.team/federation/conflicts/file.txt.upstream" ]; then
+  pass=$((pass+1)); printf 'PASS C2e sync_conflict_pair_recorded_not_success\n'
+else
+  fail=$((fail+1)); failures+=('C2e sync_conflict_pair_recorded_not_success')
+  printf 'FAIL C2e sync_conflict_pair_recorded_not_success (rc=%s out=<%s> err=<%s>)\n' "$rc" "$out" "$err"
+fi
+rm -rf "$TMP"
+
+# --- C2f: merge refusal over dirty local changes exits 1, not a false 0 ---------
+# Uncommitted local edits to a file upstream also touched make `git merge` refuse;
+# the sync must exit 1 and leave HEAD untouched (the pre-fix bug reported success).
+setup main
+origin_commit main remote
+echo dirty-local >> "$WORK/file.txt"   # uncommitted; origin also modified file.txt
+before="$(git -C "$WORK" rev-parse HEAD)"
+run_script sync-origin.sh --yes
+after="$(git -C "$WORK" rev-parse HEAD)"
+if [ "$rc" -eq 1 ] && [ "$before" = "$after" ] && ! grep -q 'sync complete' <<<"$out"; then
+  pass=$((pass+1)); printf 'PASS C2f sync_merge_refusal_exit1\n'
+else
+  fail=$((fail+1)); failures+=('C2f sync_merge_refusal_exit1')
+  printf 'FAIL C2f sync_merge_refusal_exit1 (rc=%s before=%s after=%s out=<%s> err=<%s>)\n' \
+    "$rc" "$before" "$after" "$out" "$err"
+fi
+rm -rf "$TMP"
+
+# --- C2g: unsplittable AGENTS.md records a conflict pair and exits 1 -----------
+# AGENTS.md without a BASELINE-OWNED marker that diverged from the merge-base version
+# cannot be split by merge-agents.sh -> sync must record conflicts/AGENTS.md.{ours,upstream}
+# and exit 1 without overwriting the local file.
+setup main
+printf 'agents v1\n' > "$WORK/AGENTS.md"
+git -C "$WORK" add AGENTS.md && git -C "$WORK" commit -qm seed-agents
+git -C "$WORK" push -q origin main
+oc2="$TMP/oc2"
+git clone -q "$ORIGIN" "$oc2"
+git -C "$oc2" config user.email t@t
+git -C "$oc2" config user.name t
+printf 'agents v2\n' > "$oc2/AGENTS.md" && echo remote >> "$oc2/file.txt"
+git -C "$oc2" add -A && git -C "$oc2" commit -qm remote-agents
+git -C "$oc2" push -q origin main
+rm -rf "$oc2"
+printf 'agents v1 + local custom\n' > "$WORK/AGENTS.md"
+echo local >> "$WORK/file.txt"
+git -C "$WORK" add -A && git -C "$WORK" commit -qm local-agents
+local_ag="$(git -C "$WORK" show HEAD:AGENTS.md)"
+run_script sync-origin.sh --yes
+if [ "$rc" -eq 1 ] && [ -f "$WORK/.team/federation/conflicts/AGENTS.md.ours" ] \
+   && [ -f "$WORK/.team/federation/conflicts/AGENTS.md.upstream" ] \
+   && [ "$(cat "$WORK/AGENTS.md")" = "$local_ag" ]; then
+  pass=$((pass+1)); printf 'PASS C2g agents_merge_conflict_pair\n'
+else
+  fail=$((fail+1)); failures+=('C2g agents_merge_conflict_pair')
+  printf 'FAIL C2g agents_merge_conflict_pair (rc=%s out=<%s> err=<%s>)\n' "$rc" "$out" "$err"
+fi
+rm -rf "$TMP"
+
 # --- C3a: drift_dirty_exit2 --------------------------------------------------
 setup main
 echo dirty >> "$WORK/file.txt"

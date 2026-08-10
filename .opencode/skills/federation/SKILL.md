@@ -49,9 +49,13 @@ The local baseline repo rides on a human-defined **working branch** (`WORKING_BR
   non-zero when behind/dirty so a release can be gated.
 - `scripts/sync-origin.sh` folds `origin/<detected-default>` in: AGENTS.md via
   `merge-agents.sh`, other files via a normal `git merge`, **prompting per file** (`--yes` to
-  skip prompts). True file conflicts land in `conflicts/`.
+  skip prompts). Exit 1 = sync incomplete: a `git merge` that conflicts **or** fails (local
+  changes it refuses to overwrite) is never reported as success. Conflict pairs land in
+  `conflicts/<file>.{ours,upstream}`; transient temp files live in `conflicts/scratch/` and are
+  disposable.
 - A drift sync that changes baseline-owned content must **also bump the version + changelog** —
-  otherwise it is drift, not a release.
+  otherwise it is drift, not a release. The bump is gated: only after `sync-origin.sh` exits 0
+  and the tree is conflict-free (a release from a conflicted tree is a false release).
 - **Humans merge the working branch to the default branch; the agent never pushes to it.**
 
 ## Registration (consumer ↔ baseline link)
