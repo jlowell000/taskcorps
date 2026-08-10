@@ -43,9 +43,11 @@ project initialized with `scrum-init`.
    detected default branch (`scripts/default-branch.sh`). Use `scripts/drift-check.sh` to
    classify CLEAN/AHEAD/BEHIND/DIVERGED and gate; use `scripts/sync-origin.sh` to fold upstream
    in **per file** (prompting), routing true file conflicts to `conflicts/` and running AGENTS.md
-   through `merge-agents.sh`. A drift sync that changes baseline-owned content must also bump
-   the version + changelog. **Humans merge the working branch to the default branch; the agent
-   never pushes to it.**
+   through `merge-agents.sh`. **`sync-origin.sh` exits 1 on any failed merge** (unresolved
+   conflicts, or a merge git refused over local changes) — that gates the version bump: stop,
+   surface each `conflicts/<file>.{ours,upstream}` pair to the human, and only bump the version
+   + changelog after the sync completes cleanly (a bump on a conflicted tree is a false release).
+   **Humans merge the working branch to the default branch; the agent never pushes to it.**
 6. **Never mutate a project without an `external_directory` write approved by the human, and
    never alter the baseline outside the absorb/drift flow.**
 
