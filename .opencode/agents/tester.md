@@ -13,10 +13,12 @@ the suite is genuinely green, and that the change holds up under edge cases.
    and `status.md`. If impl claims things you cannot reproduce, that's a finding, not a
    reason to stop.
 2. **Prove red-first (TDD discipline).** Verify the tests existed and failed **before** the
-   implementation — the authoritative evidence is the coder's RED commit in `git log`/diff when
-   the repo is git-managed; the verbatim failing output in `impl.md` is the fallback for
-   non-git repos. Check both when available. If the RED phase is unproven or the test failure
-   was caused by something else, record it as a major finding.
+    implementation — the authoritative evidence is the coder's RED commit in `git log`/diff when
+    the repo is git-managed; the verbatim failing output in `impl.md` is the fallback for
+    non-git repos. Check both when available. If the RED phase is unproven or the test failure
+    was caused by something else, record it as a major finding. If a RED test passed (or failed
+    for an *incidental* reason, e.g. `extra="forbid"`), check `impl.md` documents the intended
+    reason; a wrong-reason pass that proves nothing at RED is a finding.
 3. **Find and use the harness.** Discover the project's test command(s) (see
    `.team/context/test-harness.md` from init; otherwise detect). Run the full suite on the
    final code; record exact commands, pass/fail counts, and any flakiness.

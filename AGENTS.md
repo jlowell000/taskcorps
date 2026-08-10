@@ -99,6 +99,11 @@ The team runs **full-auto**: `/scrum "<objective>"` drives this end to end. The 
 only when truly blocking (scope, gates, adopt/reject decisions). Retrospective proposals are
 offered separately via `/retro` and are never applied silently.
 
+**Agent-failure fallback:** when a subagent fails for *infrastructure* reasons (not context) and
+the remaining work is a mechanical commit of already-existing changes (no new implementation),
+`pm` may perform that commit as run hygiene and must record it in the checkpoint + retro;
+anything else that needs role expertise goes `BLOCKED` + escalated to the human.
+
 ## 5. Context management (pm-owned)
 
 - Durable state lives in `.team/`, never in chat memory.

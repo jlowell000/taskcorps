@@ -39,21 +39,29 @@ work.
    returns a context-limit error, re-dispatch the SAME task with a strictly smaller prompt
    (paths only) — never a bigger one.
 4. **Enforce the handoff protocol** (see `handoff` skill): check the returning member's
-   artifact + handoff block before advancing the stage. Missing or incomplete → send back or
-   flag, never advance on guesswork. **Artifact existence check:** before advancing any gate
-   (design→coder, coder→tester, tester→reviewer), verify the expected artifact exists on disk
-   (`spec.md`, `impl.md`, `report.md`, `review.md`). Missing → send back with the specific path.
-   An empty subagent result is a failed handoff: verify the artifact on disk; if present, note
-   the protocol failure in the checkpoint; if absent, send back.
+    artifact + handoff block before advancing the stage. Missing or incomplete → send back or
+    flag, never advance on guesswork. **Artifact existence check:** before advancing any gate
+    (design→coder, coder→tester, tester→reviewer), verify the expected artifact exists on disk
+    (`spec.md`, `impl.md`, `report.md`, `review.md`). Missing → send back with the specific path.
+    **RED-commit gate:** before advancing coder→tester in a git-managed repo, verify a RED
+    commit exists (`git log --oneline -- <task files>` shows the failing-test commit preceding
+    the implementation commit). Unproven → send back to coder; do not let missing RED evidence
+    ride the pipeline for the tester to catch later.
+    An empty subagent result is a failed handoff: verify the artifact on disk; if present, note
+    the protocol failure in the checkpoint; if absent, send back.
 5. **Gate + iterate.** A stage is done only when its gate passes. `reviewer`'s verdict gates
    the task: `CHANGES_REQUESTED` loops back to coder/tester (max N iterations, then escalate
    to the human with a crisp summary).
 6. **Subagent failure ladder.** If a subagent fails (context limit, missing artifact, empty
-   result): re-dispatch once with a strictly smaller prompt (paths only). If it fails again,
-   **do not implement the work yourself** — roles exist for a reason. Mark the task `BLOCKED`
-   with the failure evidence and escalate to the human with a crisp summary (what failed, what
-   was tried, what the human should decide). Record the failure in the checkpoint so retros
-   can track recurrence.
+    result): re-dispatch once with a strictly smaller prompt (paths only). **Role-boundary
+    fallback:** if the failure is *infrastructure* (not context) — e.g. a broken model/tool —
+    and the remaining work is a **mechanical commit of already-existing changes** (no new
+    implementation), you may perform that commit as run hygiene, must record it in the
+    checkpoint + retro, and must not do any new implementation. Otherwise **do not implement
+    the work yourself** — roles exist for a reason. Mark the task `BLOCKED` with the failure
+    evidence and escalate to the human with a crisp summary (what failed, what was tried, what
+    the human should decide). Record the failure in the checkpoint so retros can track
+    recurrence.
 7. **Context stewardship.** Write a compressed checkpoint to `.team/checkpoints/` at every
     stage transition **and update the `status.md` board row for the task at the same gate**
     (set its stage/owner) — never leave the board stale mid-run. Archive completed tasks;

@@ -7,6 +7,15 @@ description: Used by the reviewer agent to run the hyper-critical quality gate o
 
 You are the last defense. Assume every earlier stage missed something.
 
+## Context budget (do this FIRST)
+
+You must complete the review in a single dispatch within your existing context window — never
+let a context-limit abort the review. Read efficiently: large files in smaller slices (targeted
+ranges), grep for the specific symbols/claims you must verify, don't re-read artifacts you
+already ingested, and prioritize what gates the verdict (spec + impl + report + the diff) over
+skimming the rest. If a slice still overflows, shrink the prompt to paths-only and re-dispatch
+before stalling.
+
 ## Checklist — mark each explicitly
 
 - [ ] **Acceptance criteria**: every criterion from `brief.md` demonstrably met (map criterion → proof).

@@ -14,6 +14,11 @@ For each acceptance criterion, in order:
 1. **RED** — write the failing test. Run it and capture the failing output **now**.
    The failure must show the feature is missing (`FAILED`, `not implemented`, unbound name,
    `404`, etc.). A test failing for an unrelated reason (broken harness, typo) does not count.
+   **If a RED test passes** (does not fail) or fails for an *incidental* reason (e.g. the model
+   rejects the input for an unrelated rule like `extra="forbid"`), verify it fails for the
+   **intended** reason: assert the specific error type/message, or confirm the test cannot pass
+   via an unrelated mechanism. Document any wrong-reason pass in `impl.md` — a test that passes
+   at RED for an incidental reason does not prove the feature's absence.
    If the repo is git-managed, **commit the failing test before implementing** so the RED phase
    is provable from history (`git log`/diff). Without git, the verbatim failing output captured
    here is the authoritative RED evidence.
@@ -59,3 +64,7 @@ Only verified findings go in "Findings"; unverified suspicions go in "Risks".
 - Never claim a full-suite pass unless you ran the full suite on final code.
 - Tests may be edited only by coder (during TDD) or tester (with every change documented in
   `report.md`).
+- **No ephemeral task-folder paths in tests.** Tests must reference durable records
+  (`.team/context/adrs/`, committed fixtures, or stable source files) — never
+  `.team/tasks/<id>/` paths, which move to `.team/archive/` when a task completes and break
+  the suite later.
