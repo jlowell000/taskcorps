@@ -19,6 +19,9 @@ Owner: designer. Copy to `.team/tasks/<id>/spec.md`.
 | --- | --- | --- |
 | AC1 | `test_...` | <observable result> |
 
+Optional: inline the test plan as TOON when this spec will be consumed by an LLM
+prompt (fenced ```toon block, same header format as the table above).
+
 Edge cases to cover: <boundaries, errors, empty input, concurrency, persistence>
 
 ## Risks & open questions

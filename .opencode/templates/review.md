@@ -14,6 +14,9 @@ Owner: reviewer. Copy to `.team/tasks/<id>/review.md`.
 `Route` names the role that must fix the blocker (coder: correctness/spec/RED evidence;
 tester: false-positive test / unverified suite claim). pm routes mechanically from this column.
 
+Optional: inline blockers as TOON when this review will be consumed by an LLM
+prompt (fenced ```toon block). Convert with `scripts/toon_table.py --encode`.
+
 ## Non-blocking notes
 
 - <nits / future improvements>

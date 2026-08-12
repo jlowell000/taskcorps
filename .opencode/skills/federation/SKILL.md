@@ -19,6 +19,19 @@ This repo is the baseline. Registered projects are other scrums installed via `s
 | `catalog/<project>/<version>/` | snapshot of what that project last received (the diff base) |
 | `conflicts/` | project-local changes that a release refuses to overwrite |
 
+## Structured data serialization
+
+Tables in federation state files (`registry.md`, `decisions.md`) and inbound proposals
+are uniform arrays of objects. When passing these between federation subagents or
+including them in LLM prompts, prefer the **TOON format** via the `toon-format` skill.
+
+- Wrap TOON data in a fenced code block labeled `toon`
+- Use the header template pattern: `items[N]{field1,field2,field3}:`
+- Convert team markdown tables with `scripts/toon_table.py --encode` / `--decode`
+- Convert JSON with the `toon-format` CLI (`npx @toon-format/cli`) or the
+  `scripts/toon_convert.py` wrapper in `.opencode/skills/toon-format/scripts/`
+- Canonical on-disk format remains markdown; TOON is the transport/compact form
+
 ## Current version (source of truth)
 
 The **current baseline version** is the top line of `changelog.md` (`CURRENT_VERSION: vX.Y.Z`).
