@@ -8,6 +8,10 @@ Owner: coder. Copy to `.team/tasks/<id>/impl.md`.
 | --- | --- | --- | --- | --- |
 | AC1 | `test_...` | <command + failure reason> | <command + pass> | <paths> |
 
+Optional: inline the per-AC evidence as TOON when this impl will be consumed by an
+LLM prompt (fenced ```toon block). RED evidence fields may contain free-form text;
+use tab delimiter if any cell contains commas.
+
 ## Refactor step
 
 - <what was cleaned up, still green>

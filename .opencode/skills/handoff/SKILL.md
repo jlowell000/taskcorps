@@ -35,6 +35,28 @@ Subagents run on tight contexts. Follow these rules so a small context never sil
 - **Empty results are a defect.** Your final message must be a non-empty summary (or explicit
   `BLOCKED`). Whitespace-only results are indistinguishable from "did nothing".
 
+## TOON for inlined structured data
+
+When you must inline structured data (arrays of uniform objects) into a dispatch,
+prompt, or checkpoint instead of passing by path, use the **TOON format** via the
+`toon-format` skill.
+
+- Wrap TOON data in a fenced code block labeled `toon`:
+  - ````toon
+  - (TOON data)
+  - ````
+- Use the header template pattern: `items[N]{field1,field2,field3}:`
+- `[N]` must match the row count
+- Convert with `scripts/toon_table.py --encode` (markdown table → TOON) or the
+  `toon-format` skill's CLI (`npx @toon-format/cli`) for JSON↔TOON
+- For team markdown tables, `scripts/toon_table.py` is the bridge:
+  - Encode: `python scripts/toon_table.py --encode table.md -o table.toon`
+  - Decode: `python scripts/toon_table.py --decode table.toon -o table.md`
+- Auto-detects delimiter (comma or tab) based on cell content; tab is used when
+  any cell contains a comma
+- Prefer path-based passing (the tight-context contract) unless the receiving
+  agent or LLM prompt requires inline data
+
 ## Handoff block format (append at the end of your artifact)
 
 ```markdown
