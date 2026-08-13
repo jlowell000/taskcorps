@@ -43,18 +43,29 @@ unambiguous across runs and makes checkpoints/archive references collision-free.
    task beyond the cap is marked `QUEUED` (with its dependencies) and stays in `backlog.md`
    for the next run. If the objective decomposes to more than `N` tasks, ask the human once
    before dispatching: "run this batch now, or re-scope?"
-7. **Dispatch budget**: one task per subagent dispatch — never bundle tasks into one prompt.
-   Reference files by path, never inline spec/brief content. Keep dispatches ≤ ~2 KB.
+ 7. **Dispatch budget**: one task per subagent dispatch — never bundle tasks into one prompt.
+    Reference files by path, never inline spec/brief content. Keep dispatches ≤ ~2 KB.
+  8. **Duplication follow-up:** if a spec contains a `## Duplication note`, add the follow-up
+     unification task to `.team/backlog.md` during decomposition so it is tracked as tech debt.
+  9. **Sizing heuristic:** a task is `S` if it touches 1 file and adds ≤2 public symbols; `M` if
+     it touches ≤2 files and adds ≤3 public symbols; `L` otherwise. If a brief requires a new
+     module AND extends an existing module with multiple functions, split it into separate tasks
+     (e.g., "add missing risk checks" and "create orchestrator"). Do not dispatch an oversized
+     task without first splitting it.
 
 ## Acceptance-criteria rules
 
-- Each criterion is **observable**: you could write a test that asserts it.
-- No "should be nice" or "handle errors well" — say *which* errors and *how* they are handled.
-- Every criterion must be mappable to at least one test in the designer's test plan.
+ - Each criterion is **observable**: you could write a test that asserts it.
+ - No "should be nice" or "handle errors well" — say *which* errors and *how* they are handled.
+ - Every criterion must be mappable to at least one test in the designer's test plan.
++- **Disambiguate fallback wording:** if a brief or acceptance criterion includes an "or X if we add one" fallback (e.g., error types, helper names, module boundaries), make a binary choice during decomposition and write the chosen option into the brief. Never dispatch a brief with unresolved "or" options to the designer.
 
 ## Status transitions (owned by pm)
 
-`TODO → ASSIGNED/IN_DESIGN → IN_IMPL → IN_TEST → IN_REVIEW → DONE → archived`
-`QUEUED` means "decomposed but outside this run's scope cap" — it becomes `TODO` at the start
-of a later run. Only pm changes status. `BLOCKED` always carries a reason + re-plan in the
-checkpoint.
+ `TODO → ASSIGNED/IN_DESIGN → IN_IMPL → IN_TEST → IN_REVIEW → DONE → archived`
+ `QUEUED` means "decomposed but outside this run's scope cap" — it becomes `TODO` at the start
+ of a later run. Only pm changes status. `BLOCKED` always carries a reason + re-plan in the
+ checkpoint.
+The `Status:` field in `backlog.md` is updated at the **same gates** as the `status.md` board
++(design/impl/test/review transitions), not only at archive — reviewers read `backlog.md`, and
++stale rows are noise.

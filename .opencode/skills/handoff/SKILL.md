@@ -7,14 +7,17 @@ description: The team's inter-agent communication protocol. Use when reading or 
 
 Every document in `.team/` is a handoff. The protocol is the only interface between agents.
 
-## Core rules
+ ## Core rules
 
-- **Read before acting:** `status.md` → `backlog.md` → the task's `brief.md` → your stage's
-  artifact → the previous stage's handoff. Never act on memory only.
-- **Write before returning:** update your own artifact, then append a compact handoff block.
-- **Own one artifact.** Roles own: designer → `spec.md` + `.team/context/`; coder → `impl.md`;
-  tester → `report.md`; reviewer → `review.md`; pm → `backlog.md` + `status.md` + checkpoints.
-- **Size budget:** keep every handoff to ~1–2 KB. Lead with deltas, not history. Padding is a defect.
+ - **Read before acting:** `status.md` → `backlog.md` → the task's `brief.md` → your stage's
+   artifact → the previous stage's handoff. Never act on memory only.
+ - **Write before returning:** update your own artifact, then append a compact handoff block.
+ - **Own one artifact.** Roles own: designer → `spec.md` + `.team/context/`; coder → `impl.md`;
+   tester → `report.md`; reviewer → `review.md`; pm → `backlog.md` + `status.md` + checkpoints.
+ - **Size budget:** keep every handoff to ~1–2 KB. Lead with deltas, not history. Padding is a defect.
++- **Duplication note:** if a spec contains a `## Duplication note` section, pm must add the
++  follow-up unification task to `.team/backlog.md` during decomposition so intentional
++  duplication is tracked as tech debt, not forgotten.
 
 ## Tight-context contract (all agents)
 
