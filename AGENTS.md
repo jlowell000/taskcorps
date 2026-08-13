@@ -117,13 +117,15 @@ anything else that needs role expertise goes `BLOCKED` + escalated to the human.
 
 ## 6. Definition of done
 
-A task is `DONE` only when **all** hold:
+ A task is `DONE` only when **all** hold:
 
-- [ ] Spec exists and was followed (deviations recorded in `impl.md`)
-- [ ] New tests existed and failed **before** the implementation (TDD proven)
-- [ ] Full suite is green on the final code
-- [ ] `reviewer` returned `APPROVED` with no open blockers
-- [ ] Handoffs + `status.md` consistent and updated; task archived
+ - [ ] Spec exists and was followed (deviations recorded in `impl.md`)
+ - [ ] New tests existed and failed **before** the implementation (TDD proven), **or** the task is
+       explicitly designated **test-only additive** in its brief and documents `RED: N/A` with
+       justification (implementation already exists)
+ - [ ] Full suite is green on the final code
+ - [ ] `reviewer` returned `APPROVED` with no open blockers
+ - [ ] Handoffs + `status.md` consistent and updated; task archived
 
 ## 7. Portability rules
 
