@@ -47,7 +47,7 @@ Git tracking (`.gitignore`): **all of `.team/` is ignored and never committed.**
 federation state (`registry.md`, `decisions.md`, `changelog.md`, `releases/`, `conflicts/`,
 `inbox/`, `catalog/`) are all local/ephemeral — they survive only on this machine, not clones.
 The baseline's canonical files live in `.opencode/`; release snapshots are regenerated, not
-versioned in git. This repo also runs `scripts/validate-team.sh` to self-check baseline
+versioned in git. This repo also runs `.team/scripts/validate-team.sh` to self-check baseline
 consistency; run it before releases.
 
 Canonical skeletons for every document above live in `.opencode/templates/` (baseline-owned,
@@ -147,9 +147,9 @@ the baseline without a `federation/changelog` entry and a release bump.
 
 - **Project appends**: child teams keep local, project-specific additions to `AGENTS.md`
   **below** the baseline-owned marker at the end of this file. Releases replace only
-  baseline-owned content above the marker (`scripts/merge-agents.sh`) and preserve the tail.
+  baseline-owned content above the marker (`.team/scripts/merge-agents.sh`) and preserve the tail.
 - **Drift**: the local repo's baseline rides on `main` and reconciles upstream `origin/main`
-  changes into it via `scripts/drift-check.sh` + `scripts/sync-origin.sh` (per-file prompts).
+  changes into it via `.team/scripts/drift-check.sh` + `.team/scripts/sync-origin.sh` (per-file prompts).
   A drift sync that changes baseline-owned content must also bump the version + changelog.
 
 ## 9. Agent instructions

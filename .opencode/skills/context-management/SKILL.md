@@ -14,7 +14,7 @@ The durable home of all team state is `.team/`. Chat memory is not durable state
      compress it: history moves to a `## History` one-liner, decisions stay.
    - Keep `backlog.md` and `status.md` tight: one line per completed task in `backlog.md`.
    - When inlining tabular data into checkpoints, summaries, or dispatches, convert
-     markdown tables to **TOON format** (via `scripts/toon_table.py --encode` or the
+     markdown tables to **TOON format** (via `.team/scripts/toon_table.py --encode` or the
      `toon-format` skill) to reduce token cost by 30–70%. Canonical on-disk format
      stays markdown; TOON is the transport form.
 2. **Checkpoints at every gate**

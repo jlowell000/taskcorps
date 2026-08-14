@@ -27,9 +27,9 @@ including them in LLM prompts, prefer the **TOON format** via the `toon-format` 
 
 - Wrap TOON data in a fenced code block labeled `toon`
 - Use the header template pattern: `items[N]{field1,field2,field3}:`
-- Convert team markdown tables with `scripts/toon_table.py --encode` / `--decode`
+- Convert team markdown tables with `.team/scripts/toon_table.py --encode` / `--decode`
 - Convert JSON with the `toon-format` CLI (`npx @toon-format/cli`) or the
-  `scripts/toon_convert.py` wrapper in `.opencode/skills/toon-format/scripts/`
+  `.team/scripts/toon_convert.py` wrapper in `.opencode/skills/toon-format/.team/scripts/`
 - Canonical on-disk format remains markdown; TOON is the transport/compact form
 
 ## Current version (source of truth)
@@ -42,25 +42,25 @@ The **current baseline version** is the top line of `changelog.md` (`CURRENT_VER
 
 Consumers keep project-specific additions to their `AGENTS.md` **strictly below** the
 `BASELINE-OWNED CONTENT` marker that ends the baseline-owned section. All AGENTS.md writes to a
-consumer go through `scripts/merge-agents.sh <baseline> <prev-catalog-snapshot> <consumer> <out>`:
+consumer go through `.team/scripts/merge-agents.sh <baseline> <prev-catalog-snapshot> <consumer> <out>`:
 - The release replaces only baseline-owned content **above** the marker; the consumer's tail
   below it is preserved verbatim.
 - A consumer with no marker that is byte-identical to its catalog snapshot is a pristine
   baseline copy → adopt the new release wholesale. Anything else without a marker cannot be
   split reliably → it is a **conflict**, written to `conflicts/`, never silently overwritten.
-- `scripts/install-global.sh` uses the same merge for a `type: global` host's AGENTS.md and
+- `.team/scripts/install-global.sh` uses the same merge for a `type: global` host's AGENTS.md and
   snapshots the **merged** file (not the raw release) into the catalog so drift diffs stay true.
 
 ## Drift (working branch ↔ detected default branch)
 
 The local baseline repo rides on a human-defined **working branch** (`WORKING_BRANCH` env, or
  the current branch) and carries local-context changes; upstream is the **detected default
- branch** (`scripts/default-branch.sh`), fetched and never forced over local work. Drift is
+ branch** (`.team/scripts/default-branch.sh`), fetched and never forced over local work. Drift is
  reconciled per file:
-- `scripts/drift-check.sh` classifies the working branch vs `origin/<detected-default>`
+- `.team/scripts/drift-check.sh` classifies the working branch vs `origin/<detected-default>`
   (CLEAN/AHEAD/BEHIND/DIVERGED), checks for uncommitted baseline-owned changes, and exits
   non-zero when behind/dirty so a release can be gated.
-- `scripts/sync-origin.sh` folds `origin/<detected-default>` in: AGENTS.md via
+- `.team/scripts/sync-origin.sh` folds `origin/<detected-default>` in: AGENTS.md via
   `merge-agents.sh`, other files via a normal `git merge`, **prompting per file** (`--yes` to
   skip prompts). Exit 1 = sync incomplete: a `git merge` that conflicts **or** fails (local
   changes it refuses to overwrite) is never reported as success. Conflict pairs land in
@@ -75,7 +75,7 @@ The local baseline repo rides on a human-defined **working branch** (`WORKING_BR
 
 Every project initialized by `scrum-init` carries `.team/federation/baseline.md` recording its
 **primary baseline** (path or git URL) and the installed version. A machine-global scope
-(installed by `scripts/install-global.sh`) is registered the same way under `Type: global`.
+(installed by `.team/scripts/install-global.sh`) is registered the same way under `Type: global`.
 Registration is two-sided:
 1. Consumer writes `baseline.md` (project) or the ledger entry (global host) recording the
    baseline + installed version during bootstrap / install.
@@ -94,7 +94,7 @@ the **released version it last received** — never un-released working-tree HEA
   global scope. **Permanent excludes** — never written or diffed, they are user-owned:
   `opencode.json`, `opencode.jsonc`, `.gitignore`, `package.json`, `package-lock.json`,
   `bun.lock`, `node_modules/`. Files the user edited locally → `conflicts/`, never overwritten.
-- Installing/re-syncing the current release is done by `scripts/install-global.sh`, which also
+- Installing/re-syncing the current release is done by `.team/scripts/install-global.sh`, which also
   refreshes the host's registry row + catalog snapshot.
 
 ## Inbound (scan → absorb)
@@ -114,7 +114,7 @@ the **released version it last received** — never un-released working-tree HEA
 For each consumer in `registry.md` (project or global host — see the global-host rules above):
 1. Compute the delta between `catalog/<project>/<version>/` and the current release.
 2. Apply the files that the project has NOT locally modified. **AGENTS.md is always written via
-   `scripts/merge-agents.sh`** (baseline-owned content merged atop the project's preserved tail).
+   `.team/scripts/merge-agents.sh`** (baseline-owned content merged atop the project's preserved tail).
    Update the catalog to the new version.
 3. Locally modified files are **not overwritten**: write the conflict (+ the baseline's new
    version of the file) into `conflicts/` and flag for the human to reconcile.

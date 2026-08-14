@@ -32,7 +32,7 @@ project initialized with `scrum-init`.
    - Compute the delta between `catalog/<consumer>/<version>/` and the current release.
    - Write the delta files into the consumer; if a file was locally modified by that consumer,
      do not overwrite — write the conflict into `.team/federation/conflicts/` and flag it.
-   - **AGENTS.md is always written via `scripts/merge-agents.sh`** (baseline-owned content
+   - **AGENTS.md is always written via `.team/scripts/merge-agents.sh`** (baseline-owned content
      merged above the `BASELINE-OWNED CONTENT` marker, project tail preserved below); only if
      the merge fails does it become a `conflicts/` entry.
    - For a `global` host, never write the user-owned config set (`opencode.json[c]`,
@@ -40,8 +40,8 @@ project initialized with `scrum-init`.
    - Update the consumer's recorded version in `registry.md` and the catalog snapshot.
 5. **Drift (working branch ↔ detected default branch).** The local baseline's working branch
    (the human-defined branch the run is on) carries local-context changes; upstream is the
-   detected default branch (`scripts/default-branch.sh`). Use `scripts/drift-check.sh` to
-   classify CLEAN/AHEAD/BEHIND/DIVERGED and gate; use `scripts/sync-origin.sh` to fold upstream
+   detected default branch (`.team/scripts/default-branch.sh`). Use `.team/scripts/drift-check.sh` to
+   classify CLEAN/AHEAD/BEHIND/DIVERGED and gate; use `.team/scripts/sync-origin.sh` to fold upstream
    in **per file** (prompting), routing true file conflicts to `conflicts/` and running AGENTS.md
    through `merge-agents.sh`. **`sync-origin.sh` exits 1 on any failed merge** (unresolved
    conflicts, or a merge git refused over local changes) — that gates the version bump: stop,
