@@ -5,10 +5,10 @@ agent: pm
 
 Delegate to the `federation` agent (use the `federation` skill) to manage baseline↔default-branch drift:
 
-1. Run `scripts/drift-check.sh` and classify the working branch vs `origin/<detected-default>` (CLEAN / AHEAD / BEHIND /
+1. Run `.team/scripts/drift-check.sh` and classify the working branch vs `origin/<detected-default>` (CLEAN / AHEAD / BEHIND /
    DIVERGED) and whether the tree is dirty. Report a compact status table.
-2. If BEHIND or DIVERGED, run `scripts/sync-origin.sh` to fold upstream `origin/<detected-default>` in —
-   **per file**, prompting before each write. AGENTS.md is merged via `scripts/merge-agents.sh`
+2. If BEHIND or DIVERGED, run `.team/scripts/sync-origin.sh` to fold upstream `origin/<detected-default>` in —
+   **per file**, prompting before each write. AGENTS.md is merged via `.team/scripts/merge-agents.sh`
    so the local tail (below the `BASELINE-OWNED CONTENT` marker) is preserved; other baseline
    files merge normally.
 3. **Conflicts gate the bump (sync exit 1).** If `sync-origin.sh` exits 1, the sync did NOT
@@ -23,7 +23,7 @@ Delegate to the `federation` agent (use the `federation` skill) to manage baseli
 4. Once the sync is clean, if baseline-owned content changed, bump the version in `changelog.md` and
    write the `releases/<version>/` snapshot (a drift change without a bump is drift, not a release).
    A bump on a half-merged / conflicted tree is a false release — never allowed.
-5. Re-run `scripts/validate-team.sh`; report the result and any conflicts to me.
+5. Re-run `.team/scripts/validate-team.sh`; report the result and any conflicts to me.
 
 `sync-origin.sh` never reports a failed `git merge` as success: a merge that refuses (e.g. local
 uncommitted changes it would overwrite) or leaves unresolved conflicts also exits 1. Scratch

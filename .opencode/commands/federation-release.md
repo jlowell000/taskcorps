@@ -8,7 +8,7 @@ Delegate to the `federation` agent to release the current baseline version (use 
 1. Re-read `.team/federation/registry.md`, `changelog.md`, and the `catalog/` snapshots.
 2. For each registered consumer: diff `catalog/<consumer>/<version>/` → current release, apply the
    changed team files that the consumer hasn't locally modified, and update the catalog + registry.
-   **AGENTS.md is written via `scripts/merge-agents.sh`** (baseline-owned content merged above the
+   **AGENTS.md is written via `.team/scripts/merge-agents.sh`** (baseline-owned content merged above the
    marker, project tail preserved below); a failed merge is a conflict, never an overwrite.
    For a `type: global` host, skip the user-owned config set (`opencode.json[c]`, `.gitignore`,
    `package*.json`, `node_modules/`) — those are permanent excludes.

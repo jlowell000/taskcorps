@@ -12,10 +12,11 @@ Initialize a project (default: current working directory) as a scrum team partic
 1. **Identify the target** — the path given to `/scrum-init`, or the current project.
    Establish the worktree root and confirm git (init if missing and the user agrees).
 2. **Copy the team** — from the baseline (this repo) into the target:
-   - `AGENTS.md`, `CLAUDE.md`, `opencode.json`
-   - `.opencode/agents/*`, `.opencode/skills/*`, `.opencode/commands/*`
-   Preserve file names; content comes from the baseline *as released to the target's version*
-   (see the `federation` skill / `catalog/` snapshots when upgrading an existing project).
+    - `AGENTS.md`, `CLAUDE.md`, `opencode.json`
+    - `.opencode/agents/*`, `.opencode/skills/*`, `.opencode/commands/*`
+    - `.team/scripts/` — team utility scripts (untracked; copied alongside .team/)
+    Preserve file names; content comes from the baseline *as released to the target's version*
+    (see the `federation` skill / `catalog/` snapshots when upgrading an existing project).
 3. **Discover the project** — capture facts into `.team/context/`:
    - `stack.md`: language(s), runtime, package manager, entry points
    - `test-harness.md`: exact test command, how to run one test, existing coverage
@@ -25,7 +26,7 @@ Initialize a project (default: current working directory) as a scrum team partic
    `.opencode/templates/` skeletons and append `.team/` to `.gitignore`.
    **Agent files are optionally git-ignored.** In a **non-baseline** repo, default to NOT
    committing the agent files (`AGENTS.md`, `CLAUDE.md`, `opencode.json`, `.opencode/`) — the
-   project's remote may not want the team tooling. Run `scripts/ignore-team.sh --ignore` (the
+   project's remote may not want the team tooling. Run `.team/scripts/ignore-team.sh --ignore` (the
    default) to append those rules; offer `--track` if the user wants them committed. In the
    **baseline** repo itself the agent files ARE tracked (they are the source of truth) — do not
    ignore them there. Ask the user once if unsure; never silently change their `.gitignore`.
