@@ -55,10 +55,12 @@ unambiguous across runs and makes checkpoints/archive references collision-free.
 
 ## Acceptance-criteria rules
 
- - Each criterion is **observable**: you could write a test that asserts it.
- - No "should be nice" or "handle errors well" — say *which* errors and *how* they are handled.
- - Every criterion must be mappable to at least one test in the designer's test plan.
-+- **Disambiguate fallback wording:** if a brief or acceptance criterion includes an "or X if we add one" fallback (e.g., error types, helper names, module boundaries), make a binary choice during decomposition and write the chosen option into the brief. Never dispatch a brief with unresolved "or" options to the designer.
+  - Each criterion is **observable**: you could write a test that asserts it.
+  - No "should be nice" or "handle errors well" — say *which* errors and *how* they are handled.
+  - Every criterion must be mappable to at least one test in the designer's test plan.
+  - **Disambiguate fallback wording:** if a brief or acceptance criterion includes an "or X if we add one" fallback (e.g., error types, helper names, module boundaries), make a binary choice during decomposition and write the chosen option into the brief. Never dispatch a brief with unresolved "or" options to the designer.
+  - **Line-count precision:** if a brief specifies a line-count constraint (e.g., "≤ N lines"), it must also specify the counting method: "≤ N physical lines" or "≤ N non-blank lines". Add this to the brief during decomposition if missing.
+  - **Type-check strictness:** if a brief includes type-checking acceptance criteria (e.g., "mypy passes"), pin the exact config and scope in the brief (e.g., `mypy --config-file mypy.ini <module>` with `disallow_untyped_defs = true`). Never leave strictness unspecified.
 
 ## Status transitions (owned by pm)
 
@@ -67,5 +69,20 @@ unambiguous across runs and makes checkpoints/archive references collision-free.
  of a later run. Only pm changes status. `BLOCKED` always carries a reason + re-plan in the
  checkpoint.
 The `Status:` field in `backlog.md` is updated at the **same gates** as the `status.md` board
-+(design/impl/test/review transitions), not only at archive — reviewers read `backlog.md`, and
-+stale rows are noise.
+(design/impl/test/review transitions), not only at archive — reviewers read `backlog.md`, and
+stale rows are noise.
+
+## Persistent backlog sync
+
+If the project uses a persistent backlog (e.g., GitHub Issues, Jira, or a markdown backlog file),
+sync run tasks to it:
+
+1. At `/scrum` start, read open backlog items. For each item selected for the run, create
+   `.team/tasks/<run>-T<n>/brief.md` referencing the backlog item id. The brief's acceptance
+   criteria are derived from the backlog item's criteria, decomposed into executable chunks.
+2. After each stage gate (design → impl → test → review), update the backlog item's status and
+   add a run entry: `[<run-id>] <stage> complete — <delta>`.
+3. When delivery is ready, update the backlog item with completed sub-tasks and the PR link,
+   then mark it ready for human acceptance. Do not close the item — the human closes it.
+4. If an item spans multiple runs, keep it open and append each run's PR to the sub-tasks
+   checklist. Only mark it ready for acceptance when all acceptance criteria are met.

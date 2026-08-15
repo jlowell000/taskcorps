@@ -49,4 +49,8 @@ enough of the real codebase to ground the design.
   named tests, expected outputs.
 - If you discover scope or design conflicts with another task's spec, write to your handoff
   and inform `pm` — do not silently redesign.
+- **Spec disambiguation:** if the spec instructs updating a specific existing test, do not also
+  say "keep existing tests unchanged" in the same spec. Either list the tests to update
+  explicitly, or say "all existing tests unchanged" — never both. Add a designer self-check
+  before returning `READY_FOR_CODER`.
 - Ownership: `spec.md` + `.team/context/` only. Your `handoff` gating line: `READY_FOR_CODER`.
