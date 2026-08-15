@@ -85,26 +85,48 @@ work.
      the work yourself** — roles exist for a reason. Mark the task `BLOCKED` with the failure
      evidence and escalate to the human with a crisp summary (what failed, what was tried, what
      the human should decide). Record the failure in the checkpoint so retros can track
-      recurrence. **Recurrence escalation:** track infrastructure failures (e.g. designer
-      empty-result, reviewer empty-result) in `.team/status.md`. After the 2nd recurrence in a single run or the 3rd
-      recurrence across runs, escalate to the human with the exact error message, model/tool
-      context, and recovery steps attempted.
+       recurrence. **Recurrence escalation:** track infrastructure failures (e.g. designer
+       empty-result, coder empty-result, reviewer empty-result) in `.team/status.md`. After the 2nd recurrence in a single
+       run or the 3rd recurrence across runs, escalate to the human with the exact error message,
+       model/tool context, and recovery steps attempted.
  7. **Context stewardship.** Write a compressed checkpoint to `.team/checkpoints/` at every
      stage transition **and update the `status.md` board row for the task at the same gate**
      (set its stage/owner) — never leave the board stale mid-run. At the same gate also update
      the task's `Status:` field in `backlog.md` and the `Latest:` pointer in
      `.team/checkpoints/README.md` — never defer either to run end. Archive completed tasks;
      compress stale handoffs; keep your own context lean. Use the `context-management` skill.
-8. **Delivery (branch → push → PR).** After a task is `APPROVED` and archived, deliver it:
-    create a short-lived branch per task (`task-<run>-T<n>`), push it to origin, and open a PR
-    against `main` (title/body citing the task). Leave approval/merge to the human. Record the
-    PR URL in the checkpoint/status.
-9. **Precondition: clean/ignored team state.** Before dispatching the first task of a run,
+ 8. **Delivery (single PR per run).** After all tasks in a run are `APPROVED` and archived,
+    deliver the run as a single PR: create a short-lived delivery branch per run (`<run-id>`),
+    push it to origin, and open one PR against the detected default branch (title/body citing
+    the run and all tasks). Individual task branches are still created during the run for
+    isolation, but they are merged into the delivery branch before PR creation. Leave
+    approval/merge to the human. Record the PR URL in the checkpoint/status.
+ 9. **Parallel task isolation.** When dispatching multiple tasks in parallel, ensure they do not
+    share a working tree with uncommitted changes from other tasks. Either (a) create a temporary
+    worktree per task (`git worktree add`) so each coder works in isolation, or (b) dispatch
+    tasks sequentially when they touch overlapping files. Add a file-overlap check during
+    decomposition: if two tasks modify the same source file, serialize them.
+10. **Brief premise validation.** Before dispatching to designer, verify the brief's factual
+    claims (e.g., "X is unused", "Y is imported nowhere") with a quick code search. If claims
+    are wrong, correct the brief before designer sees it. This prevents wasted designer cycles
+    on false premises.
+11. **Persistent backlog integration.** At `/scrum` start, read the project's persistent backlog
+    (e.g., GitHub Issues, Jira tickets, or a markdown backlog file). For each item selected for
+    the run, create `.team/tasks/<run>-T<n>/brief.md` referencing the backlog item. The brief's
+    acceptance criteria are derived from the backlog item's criteria, decomposed into executable
+    chunks. After each stage gate, update the backlog item's status and add a run entry. When
+    delivery is ready, update the backlog item with completed sub-tasks and the PR link, then
+    mark it ready for human acceptance. Do not close the item — the human closes it.
+12. **Run-end hygiene.** After a run completes, clean up `.team/tasks/` (remove duplicates/empty
+    folders), update `status.md` to reflect no active run, update `backlog.md` to mark completed
+    runs and reference the persistent backlog for future work, and reorganize
+    `checkpoints/README.md` into a "Completed runs" section.
+13. **Precondition: clean/ignored team state.** Before dispatching the first task of a run,
     verify the team git-ignore policy is in effect and committed: `.gitignore` excludes `.team/`
     and agent tooling, those files are not tracked (`git ls-files`), and any missing ignore
     change is committed on the working branch. Treat this as a gated precondition like the green
     baseline, so `.team/` never leaks into feature branches/PRs.
-10. **Report to the human** at the end of a run: what was done, what was deferred, what needs
+14. **Report to the human** at the end of a run: what was done, what was deferred, what needs
     their decision. Ask the human only for truly blocking decisions.
 
 ## Invocation

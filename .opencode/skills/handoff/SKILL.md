@@ -14,10 +14,13 @@ Every document in `.team/` is a handoff. The protocol is the only interface betw
  - **Write before returning:** update your own artifact, then append a compact handoff block.
  - **Own one artifact.** Roles own: designer → `spec.md` + `.team/context/`; coder → `impl.md`;
    tester → `report.md`; reviewer → `review.md`; pm → `backlog.md` + `status.md` + checkpoints.
- - **Size budget:** keep every handoff to ~1–2 KB. Lead with deltas, not history. Padding is a defect.
-+- **Duplication note:** if a spec contains a `## Duplication note` section, pm must add the
-+  follow-up unification task to `.team/backlog.md` during decomposition so intentional
-+  duplication is tracked as tech debt, not forgotten.
+  - **Size budget:** keep every handoff to ~1–2 KB. Lead with deltas, not history. Padding is a defect.
+  - **Duplication note:** if a spec contains a `## Duplication note` section, pm must add the
+    follow-up unification task to `.team/backlog.md` during decomposition so intentional
+    duplication is tracked as tech debt, not forgotten.
+  - **RED:N/A checklist:** if this is a test-only additive task where the implementation already
+    exists, coder must document `RED: N/A` with justification in `impl.md` before returning
+    `READY_FOR_TESTER`. Tester verifies this documentation is present.
 
 ## Tight-context contract (all agents)
 

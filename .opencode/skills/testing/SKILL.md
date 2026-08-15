@@ -85,6 +85,11 @@ Only verified findings go in "Findings"; unverified suspicions go in "Risks".
    (`.team/context/adrs/`, committed fixtures, or stable source files) — never
    `.team/tasks/<id>/` paths, which move to `.team/archive/` when a task completes and break
    the suite later.
- - **Pre-existing defects:** if you discover a pre-existing defect during task execution, record
-   it in the `Pre-existing defects` section of `report.md`. pm will add it to `.team/backlog.md`
-   as a tracked item. Do not silently document and forget defects.
+  - **Pre-existing defects:** if you discover a pre-existing defect during task execution, record
+    it in the `Pre-existing defects` section of `report.md`. pm will add it to `.team/backlog.md`
+    as a tracked item. Do not silently document and forget defects.
+  - **RED evidence for all changes:** any production code change needs RED evidence, even if it's
+    a post-GREEN fix. If a fix is made after the original GREEN commit, the coder must either
+    (a) write a new failing test and commit it as RED before the fix, or (b) document why a new
+    RED is impossible and get pm approval. Tester verifies RED evidence exists for every
+    production code change in the task.
