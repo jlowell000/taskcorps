@@ -25,8 +25,8 @@ upgrade from. It dogfoods its own team.
 | `/scrum "<objective>"` | Full-auto run: decompose → design → code → test → review → report |
 | `/status` | Show the current team board |
 | `/retro` | Review the last run; write human-approved proposals to improve the team |
-| `/install-global` | Install the latest team files to global tool configs (opencode, deepseek) |
-| `/release` | Create a PR from approved retro proposals against the baseline remote |
+| `/install-global` | Install the latest team files to global tool configs (opencode, deepseek, claude-code, cursor, codex) via adapters |
+| `/release` | Create a PR from approved retro proposals against the baseline remote (multi-provider Git support) |
 
 ## How a run works
 
@@ -55,15 +55,25 @@ Rules that make the team work:
 ## Global install model
 
 This repo is the **baseline** — the canonical team definition that other projects install and
-upgrade from. The team is installed as modular files into each tool's config directory:
+upgrade from. The team is installed as modular files into each tool's config directory via
+adapters (`.opencode/scripts/adapters/`):
 
 - **Opencode**: files land in `<config>/.opencode/{agents,commands,skills,templates}/` plus
-  `AGENTS.md` at the root. Run `/install-global` to sync.
+  `AGENTS.md` at the root. The `opencode` adapter injects `mode`, `color`, `temperature`,
+  `permission` frontmatter. Run `/install-global` to sync.
+- **Claude Code**: files land in `<config>/.claude/agents/` with Claude Code frontmatter
+  (`name`, `description`, `tools`, `model`, `permissionMode`). The `claude-code` adapter
+  also generates `CLAUDE.md` as an `@AGENTS.md` import.
+- **Cursor**: files land in `<config>/.cursor/agents/` with Cursor frontmatter
+  (`name`, `description`, `model`, `readonly`).
+- **Codex**: files land in `<config>/.codex/agents/` as TOML files with Codex agent format.
 - **Deepseek**: files land in `<config>/.agents/{skills,notes/agents,notes/commands,notes/templates}/`.
   The harness's own `AGENTS.md` is never overwritten; taskcorps `AGENTS.md` is installed as
   `.agents/notes/taskcorps-AGENTS.md`.
+- **Copilot**: taskcorps `AGENTS.md` is merged into `.github/copilot-instructions.md`.
 
 User-owned config files (`opencode.json`, `settings.yaml`, `.env`, etc.) are never touched.
+The adapters are idempotent and written in Python for cross-platform support.
 
 ## Workspace layout
 
@@ -80,11 +90,24 @@ opencode.json        # default_agent: pm, auto-compaction, external_directory: a
 
 ## Portability
 
-The team is authored to run across AI coding tools:
-- Skills use only the portable `name` + `description` frontmatter (Agent Skills open standard)
-- Agent bodies avoid tool-specific wording; tool glue stays in frontmatter / `opencode.json`
-- `AGENTS.md` is the canonical contract, imported into Claude Code via `CLAUDE.md`
-- Added adapters simply re-render these sources; never fork the content
+The team is authored to run across AI coding tools (OpenCode, Claude Code, Cursor, Codex,
+Copilot, Deepseek):
+
+- **Canonical sources**: `AGENTS.md` (team contract), `.opencode/agents/*.md` (canonical role
+  definitions), `.opencode/skills/*/SKILL.md`, `.opencode/commands/*.md`
+- **Tool-agnostic frontmatter**: canonical agent files use only `name` + `description`
+  (Agent Skills open standard). Tool-specific fields (`mode`, `color`, `temperature`,
+  `permission`) are injected by adapters during install.
+- **Adapter architecture**: `.opencode/scripts/adapters/` contains Python scripts that
+  re-render canonical sources into each tool's format. Adapters are idempotent and
+  cross-platform.
+- **Multi-provider Git**: `/release` supports GitHub (`gh`), GitLab (`glab`), and Gitea
+  via a provider abstraction layer.
+- **Deepseek integration**: taskcorps files are installed as reference docs (`.agents/notes/`)
+  alongside existing `dsh-*` skills; the harness root `AGENTS.md` is never touched.
+
+To add support for a new tool, write an adapter in `.opencode/scripts/adapters/` and
+register it in `/install-global`.
 
 ## Initialize a project
 

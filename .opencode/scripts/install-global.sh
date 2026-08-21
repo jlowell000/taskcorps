@@ -20,6 +20,8 @@
 #    cordis.patch.yml, profiles/, sessions/, storages/ for deepseek.
 #  - Idempotent: safe to re-run; existing files are overwritten (that's the point), but
 #    user-owned excludes are preserved.
+#  - Adapter-based: canonical files (.opencode/agents/*.md) have tool-agnostic frontmatter.
+#    Adapters inject tool-specific fields during install.
 set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -70,6 +72,25 @@ merge_agents() { # baseline_agents_md consumer_agents_md outfile
   fi
 }
 
+# --- adapters ---------------------------------------------------------------
+# Canonical agent files have tool-agnostic frontmatter. Adapters inject tool-specific
+# fields during install. Each adapter is a Python script in .opencode/scripts/adapters/.
+run_adapter() { # adapter_name source target extra_args...
+  local adapter="$ROOT/.opencode/scripts/adapters/$1.py"
+  if [ ! -f "$adapter" ]; then
+    note "  Adapter $1 not found, skipping"
+    return 0
+  fi
+  if command -v python3 >/dev/null 2>&1; then
+    python3 "$adapter" "$@"
+  elif command -v python >/dev/null 2>&1; then
+    python "$adapter" "$@"
+  else
+    err "Python not found; cannot run adapter $1"
+    return 1
+  fi
+}
+
 # --- install into an opencode target -----------------------------------------
 install_opencode() { # target_dir
   local target="$1"
@@ -94,11 +115,14 @@ install_opencode() { # target_dir
   # CLAUDE.md — copy if we have one (baseline may not, depending on setup)
   [ -f "$ROOT/CLAUDE.md" ] && copy_file "$ROOT/CLAUDE.md" "$target/CLAUDE.md"
 
-  # agents, commands, skills, templates — flat copy
+  # agents, commands, skills, templates — flat copy (canonical, tool-agnostic)
   copy_tree "$ROOT/.opencode/agents"   "$target/agents"
   copy_tree "$ROOT/.opencode/commands" "$target/commands"
   copy_tree "$ROOT/.opencode/templates" "$target/templates"
   copy_tree "$ROOT/.opencode/scripts"  "$target/scripts"
+
+  # Run opencode adapter to inject tool-specific frontmatter
+  run_adapter opencode "$ROOT/.opencode/agents" "$target/agents" "$ROOT/AGENTS.md"
 
   # skills — preserve <name>/SKILL.md structure
   for d in "$ROOT"/.opencode/skills/*/; do
@@ -108,6 +132,9 @@ install_opencode() { # target_dir
     mkdir -p "$target/skills/$name"
     [ -e "$d/SKILL.md" ] && copy_file "$d/SKILL.md" "$target/skills/$name/SKILL.md"
   done
+
+  # Generate tool-specific config (if not already present)
+  run_adapter configs "$target" "opencode"
 }
 
 # --- install into a deepseek target ------------------------------------------
@@ -134,6 +161,12 @@ install_deepseek() { # target_dir
 
   # agents → .agents/notes/agents/<role>.md
   copy_tree "$ROOT/.opencode/agents" "$target/.agents/notes/agents"
+
+  # Run deepseek adapter to organize reference docs
+  run_adapter deepseek "$ROOT" "$target" "$ROOT/AGENTS.md"
+
+  # Generate tool-specific config (if not already present)
+  run_adapter configs "$target" "deepseek"
 
   # commands → .agents/notes/commands/<name>.md
   copy_tree "$ROOT/.opencode/commands" "$target/.agents/notes/commands"

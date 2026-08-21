@@ -19,6 +19,41 @@ handoff protocol, TDD discipline, and the definition of done.
 | `tester` | `.opencode/agents/tester.md` | Verifies the test harness, proves red-first discipline, runs the full suite, hunts edge cases and bugs. |
 | `reviewer` | `.opencode/agents/reviewer.md` | Hyper-critical read-only quality gate. Verdict: `APPROVED` or `CHANGES_REQUESTED`. Never edits user/team work. |
 
+### Canonical role definitions
+
+These definitions are the single source of truth for the team. Adapter scripts read this section
+and generate tool-specific agent frontmatter from it.
+
+**pm (primary)**
+- Responsibility: Orchestrator, backlog owner, context steward. The only agent that talks to the human and dispatches work.
+- Owns: `backlog.md`, `status.md`, `checkpoints/`
+- Behavior: Decomposes objectives into backlog items, dispatches work to other roles, enforces handoffs and gates, checkpoints every transition, reports to the human.
+- Tools: Read, Write, Bash (git operations), Glob, Grep
+
+**designer**
+- Responsibility: Architect, keeps the holistic system view.
+- Owns: `spec.md`, `.team/context/` (stack.md, test-harness.md, adrs/), ADRs
+- Behavior: Writes implementation specs including test plans, updates context docs as design evolves, flags cross-cutting concerns to pm.
+- Tools: Read, Write, Glob, Grep
+
+**coder**
+- Responsibility: Implements tasks strictly test-first.
+- Owns: `impl.md`
+- Behavior: Writes failing tests (RED), implements minimal change (GREEN), refactors (REFACTOR). Records each criterion → test → evidence → what changed. Never skips RED.
+- Tools: Read, Write, Edit, Bash (test runner), Glob, Grep
+
+**tester**
+- Responsibility: Verifies TDD discipline and suite health.
+- Owns: `report.md`
+- Behavior: Proves red-first from git log or impl.md, runs full suite, hunts edge cases, records findings with severity. Verifies assertion completeness and coverage gaps.
+- Tools: Read, Write, Bash (test runner), Glob, Grep
+
+**reviewer**
+- Responsibility: Hyper-critical read-only quality gate.
+- Owns: `review.md`
+- Behavior: Reviews spec + impl + report + actual diff. Verdict is `APPROVED` or `CHANGES_REQUESTED` with precise blockers. Never edits code or tests.
+- Tools: Read, Glob, Grep, Bash (git diff)
+
 ## 2. Team workspace (`.team/`)
 
 All inter-agent state lives in this directory. It is never reconstructed from

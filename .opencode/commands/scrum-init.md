@@ -1,7 +1,5 @@
 ---
 description: Initialize a project into the scrum team: install the team files, run discovery, seed .team/ state, and establish a green test baseline.
-agent: pm
-subtask: true
 ---
 
 Run the `bootstrap` skill to initialize the target project into the scrum team.

@@ -1,6 +1,5 @@
 ---
 description: Run the virtual dev team in full-auto on an objective, end to end.
-agent: pm
 ---
 
 Run a complete scrum session for: $ARGUMENTS

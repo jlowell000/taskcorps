@@ -1,6 +1,5 @@
 ---
 description: Run a retrospective of the last scrum run and write human-approved proposals for improving the team itself.
-agent: pm
 ---
 
 Use the `retro` skill to review the last run:
