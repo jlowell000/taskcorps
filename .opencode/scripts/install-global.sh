@@ -57,7 +57,7 @@ copy_tree() { # src_dir dst_dir
 # preserve the consumer's local tail below it. Uses merge-agents.sh.
 merge_agents() { # baseline_agents_md consumer_agents_md outfile
   local baseline="$1" consumer="$2" outfile="$3"
-  local script="$ROOT/.team/scripts/merge-agents.sh"
+  local script="$ROOT/.opencode/scripts/merge-agents.sh"
   if [ ! -x "$script" ]; then
     err "merge-agents.sh not found or not executable at $script"
     return 1

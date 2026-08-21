@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-default-branch.sh — standalone TDD test for .team/scripts/default-branch.sh.
+# test-default-branch.sh — standalone TDD test for .opencode/scripts/default-branch.sh.
 # Builds throwaway repos in mktemp -d and runs the helper with cwd inside that repo,
 # exercising each detection path deterministically and offline.
 # Exit 0 iff all tests pass; exit 1 otherwise.
@@ -95,15 +95,19 @@ check 'C4 no_git_repo_exits_nonzero' 1 '' 'default-branch.sh'
 rm -rf "$dir"
 
 # --- C5: other scripts untouched ------------------------------------------------
+SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -n "${VALIDATE_TEAM_RUNNING:-}" ]; then
   pass=$((pass+1)); printf 'PASS C5 other_scripts_untouched (skipped: invoked from validate-team.sh)\n'
-elif [ "$(sha256sum .team/scripts/drift-check.sh .team/scripts/sync-origin.sh .team/scripts/validate-team.sh | sha256sum | awk '{print $1}')" = "0401fad7bf652e85d4d68d2a38ffa522c11f3d85ce397a602d21bf6351d1f49e" ]; then
-  pass=$((pass+1))
-  printf 'PASS C5 other_scripts_untouched\n'
 else
-  fail=$((fail+1))
-  failures+=('C5 other_scripts_untouched')
-  printf 'FAIL C5 other_scripts_untouched (diff in drift-check/sync-origin/validate-team)\n'
+  modified=$(git diff --name-only -- "$SCRIPTS_DIR" | grep -v "^$(cd "$SCRIPTS_DIR" && git ls-files default-branch.sh)$" || true)
+  if [ -z "$modified" ]; then
+    pass=$((pass+1))
+    printf 'PASS C5 other_scripts_untouched\n'
+  else
+    fail=$((fail+1))
+    failures+=('C5 other_scripts_untouched')
+    printf 'FAIL C5 other_scripts_untouched (modified: %s)\n' "$modified"
+  fi
 fi
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"

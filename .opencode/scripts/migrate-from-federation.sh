@@ -123,9 +123,11 @@ TARGET_AGENTS="$TARGET/AGENTS.md"
 
 if [ -f "$BASELINE_AGENTS" ] && [ -f "$TARGET_AGENTS" ]; then
   # Use surgical merge if merge-agents.sh is available
-  MERGE_SCRIPT="$TARGET/.team/scripts/merge-agents.sh"
-  if [ ! -x "$MERGE_SCRIPT" ] && [ -x "$BASELINE/.team/scripts/merge-agents.sh" ]; then
-    MERGE_SCRIPT="$BASELINE/.team/scripts/merge-agents.sh"
+  MERGE_SCRIPT="$TARGET/.opencode/scripts/merge-agents.sh"
+  if [ ! -x "$MERGE_SCRIPT" ] && [ -x "$TARGET/.team/scripts/merge-agents.sh" ]; then
+    MERGE_SCRIPT="$TARGET/.team/scripts/merge-agents.sh"
+  elif [ ! -x "$MERGE_SCRIPT" ] && [ -x "$BASELINE/.opencode/scripts/merge-agents.sh" ]; then
+    MERGE_SCRIPT="$BASELINE/.opencode/scripts/merge-agents.sh"
   fi
 
   if [ -x "$MERGE_SCRIPT" ]; then
