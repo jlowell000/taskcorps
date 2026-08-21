@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-claude-code.py — adapter for Claude Code.
+claude-code/run.py — adapter for Claude Code.
 
 Generates .claude/agents/<role>.md files with Claude Code frontmatter:
   name, description, tools, model, permissionMode
@@ -12,9 +12,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from common import copy_file, read_file, write_file
+import yaml
+from common import extract_description, parse_frontmatter, read_file, write_file
 
 ROLE_TOOLS: dict[str, str] = {
     "pm": "Read, Write, Bash, Glob, Grep",
@@ -56,22 +57,8 @@ def run(source: Path, target: Path, agents_md: Path) -> None:
             continue
         role = role_file.stem
         text = read_file(role_file)
-        # Extract description from existing frontmatter or first line
-        import re
-        import yaml
-
-        fm_match = re.match(r"\A---\s*\n(.*?)\n---\s*\n?", text, re.DOTALL)
-        if fm_match:
-            try:
-                fm = yaml.safe_load(fm_match.group(1)) or {}
-                description = fm.get("description", "")
-            except Exception:
-                description = ""
-        else:
-            description = ""
-
-        if not description:
-            description = role
+        description = extract_description(text) or role
+        _, body = parse_frontmatter(text)
 
         claude_fm = {
             "name": role,
@@ -82,7 +69,6 @@ def run(source: Path, target: Path, agents_md: Path) -> None:
         }
 
         fm_block = "---\n" + yaml.dump(claude_fm, default_flow_style=False, sort_keys=False) + "---\n"
-        body = text[fm_match.end() :] if fm_match else text
         write_file(target / f"{role}.md", fm_block + "\n" + body if body else fm_block)
 
     # Generate CLAUDE.md as @AGENTS.md import
@@ -92,6 +78,6 @@ def run(source: Path, target: Path, agents_md: Path) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: adapters/claude-code.py <source_agents_dir> <target_agents_dir> <AGENTS.md>", file=sys.stderr)
+        print("Usage: adapters/claude-code/run.py <source_agents_dir> <target_agents_dir> <AGENTS.md>", file=sys.stderr)
         sys.exit(1)
     run(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-git-providers.py — abstraction layer for multi-provider Git PR operations.
+git-providers/run.py — abstraction layer for multi-provider Git PR operations.
 
 Supports GitHub (gh CLI), GitLab (glab CLI), and Gitea (gitea CLI).
+
+TODO: expand to full interface (branch creation, label management, CI status)
 """
 
 from __future__ import annotations
@@ -12,7 +14,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from common import read_file, write_file
 
@@ -124,7 +126,7 @@ def create_pr(provider: GitProvider, title: str, body: str, head: str, base: str
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: adapters/git-providers.py <pr-capabilities.md>", file=sys.stderr)
+        print("Usage: adapters/git-providers/run.py <pr-capabilities.md>", file=sys.stderr)
         sys.exit(1)
     provider = detect_provider(Path(sys.argv[1]))
     if provider:

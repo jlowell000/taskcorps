@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-opencode.py — adapter for OpenCode.
+opencode/run.py — adapter for OpenCode.
 
 Injects OpenCode-specific frontmatter into canonical agent files:
   mode, color, temperature, permission
@@ -11,17 +11,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Add parent directory to path so we can import common
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+# Allow importing common.py from the parent adapters/ directory
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from common import (
-    copy_file,
-    copy_tree,
-    ensure_frontmatter,
-    parse_roles_from_agents,
-    read_file,
-    write_file,
-)
+from common import ensure_frontmatter, read_file, write_file
 
 ROLE_FRONTMATTER: dict[str, dict] = {
     "pm": {
@@ -68,11 +61,11 @@ def run(source: Path, target: Path, agents_md: Path) -> None:
     # Copy other agent files unchanged (if any non-role files exist)
     for f in source.iterdir():
         if f.is_file() and f.name not in {r + ".md" for r in ROLE_FRONTMATTER}:
-            copy_file(f, target / f.name)
+            write_file(target / f.name, read_file(f))
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: adapters/opencode.py <source_agents_dir> <target_agents_dir> <AGENTS.md>", file=sys.stderr)
+        print("Usage: adapters/opencode/run.py <source_agents_dir> <target_agents_dir> <AGENTS.md>", file=sys.stderr)
         sys.exit(1)
     run(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))

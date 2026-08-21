@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-copilot.py — adapter for GitHub Copilot.
+copilot/run.py — adapter for GitHub Copilot.
 
 Merges taskcorps AGENTS.md content into .github/copilot-instructions.md.
 If the file exists, prepend taskcorps content; otherwise create it.
@@ -11,7 +11,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from common import read_file, write_file
 
@@ -42,6 +42,6 @@ def run(source: Path, target: Path, agents_md: Path) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: adapters/copilot.py <source_opencode_dir> <target_root> <AGENTS.md>", file=sys.stderr)
+        print("Usage: adapters/copilot/run.py <source_opencode_dir> <target_root> <AGENTS.md>", file=sys.stderr)
         sys.exit(1)
     run(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))

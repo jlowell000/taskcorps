@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-codex.py — adapter for OpenAI Codex.
+codex/run.py — adapter for OpenAI Codex.
 
 Generates .codex/agents/<role>.toml files with Codex agent format:
   name, description, developer_instructions
@@ -8,23 +8,12 @@ Generates .codex/agents/<role>.toml files with Codex agent format:
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 
-try:
-    import tomllib  # Python 3.11+
-except ImportError:
-    import tomli as tomllib  # backport
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-try:
-    import tomli_w
-except ImportError:
-    tomli_w = None
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from common import read_file, write_file
+from common import extract_description, parse_frontmatter, read_file, write_file
 
 
 def run(source: Path, target: Path, agents_md: Path) -> None:
@@ -42,24 +31,8 @@ def run(source: Path, target: Path, agents_md: Path) -> None:
             continue
         role = role_file.stem
         text = read_file(role_file)
-
-        # Extract description from existing frontmatter
-        fm_match = re.match(r"\A---\s*\n(.*?)\n---\s*\n?", text, re.DOTALL)
-        if fm_match:
-            try:
-                import yaml
-                fm = yaml.safe_load(fm_match.group(1)) or {}
-                description = fm.get("description", "")
-            except Exception:
-                description = ""
-        else:
-            description = ""
-
-        if not description:
-            description = role
-
-        # The body text becomes developer_instructions
-        body = text[fm_match.end() :] if fm_match else text
+        description = extract_description(text) or role
+        _, body = parse_frontmatter(text)
         body = body.strip()
 
         toml_content = f"""\
@@ -68,7 +41,6 @@ description = "{description}"
 
 [developer_instructions]
 """
-        # Embed body as a multi-line string
         toml_content += f'content = """\n{body}\n"""\n'
 
         write_file(target / f"{role}.toml", toml_content)
@@ -76,6 +48,6 @@ description = "{description}"
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: adapters/codex.py <source_agents_dir> <target_agents_dir> <AGENTS.md>", file=sys.stderr)
+        print("Usage: adapters/codex/run.py <source_agents_dir> <target_agents_dir> <AGENTS.md>", file=sys.stderr)
         sys.exit(1)
     run(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))

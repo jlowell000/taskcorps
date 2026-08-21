@@ -94,13 +94,3 @@ users[3]{id,name,role,lastLogin}:
 
 **Instruction**
 Return only users with role "user" as TOON. Use the same header format. Set `[N]` correctly. Output only the code block.
-
----
-
-## Utilities included in this Skill
-- `scripts/toon_convert.py`: A convenience wrapper that:
-  - detects TOON code fences in Markdown and extracts them
-  - calls the official CLI via `toon` (if installed) or `npx @toon-format/cli`
-  - supports `--encode/--decode`, `--delimiter`, `--stats`, and folding/expansion flags
-
-See: [scripts/README.md](scripts/README.md)

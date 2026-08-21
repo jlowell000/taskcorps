@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-deepseek.py — adapter for Deepseek Harness.
+deepseek/run.py — adapter for Deepseek Harness.
 
 Installs taskcorps agent files as plain Markdown reference docs under .agents/.
 The harness's own root AGENTS.md is never touched.
@@ -11,7 +11,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from common import copy_file, copy_tree, read_file, write_file
 
@@ -64,6 +64,6 @@ def run(source: Path, target: Path, agents_md: Path) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: adapters/deepseek.py <source_opencode_dir> <target_agents_dir> <AGENTS.md>", file=sys.stderr)
+        print("Usage: adapters/deepseek/run.py <source_opencode_dir> <target_agents_dir> <AGENTS.md>", file=sys.stderr)
         sys.exit(1)
     run(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))

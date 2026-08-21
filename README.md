@@ -73,7 +73,8 @@ adapters (`.opencode/scripts/adapters/`):
 - **Copilot**: taskcorps `AGENTS.md` is merged into `.github/copilot-instructions.md`.
 
 User-owned config files (`opencode.json`, `settings.yaml`, `.env`, etc.) are never touched.
-The adapters are idempotent and written in Python for cross-platform support.
+Adapters are discovered automatically from `.opencode/scripts/adapters/*/manifest.yaml` and
+are written in Python for cross-platform support.
 
 ## Workspace layout
 
@@ -98,16 +99,17 @@ Copilot, Deepseek):
 - **Tool-agnostic frontmatter**: canonical agent files use only `name` + `description`
   (Agent Skills open standard). Tool-specific fields (`mode`, `color`, `temperature`,
   `permission`) are injected by adapters during install.
-- **Adapter architecture**: `.opencode/scripts/adapters/` contains Python scripts that
-  re-render canonical sources into each tool's format. Adapters are idempotent and
-  cross-platform.
+- **Adapter architecture**: `.opencode/scripts/adapters/` contains manifest-driven Python
+  adapters that re-render canonical sources into each tool's format. Each adapter is a
+  directory with `manifest.yaml` + `run.py` + `commands.py`. Adapters self-register via
+  `discover.py`; no shell script changes needed to add a new tool.
 - **Multi-provider Git**: `/release` supports GitHub (`gh`), GitLab (`glab`), and Gitea
-  via a provider abstraction layer.
+  via a provider abstraction layer (`.opencode/scripts/adapters/git-providers/`).
 - **Deepseek integration**: taskcorps files are installed as reference docs (`.agents/notes/`)
   alongside existing `dsh-*` skills; the harness root `AGENTS.md` is never touched.
 
-To add support for a new tool, write an adapter in `.opencode/scripts/adapters/` and
-register it in `/install-global`.
+To add support for a new tool, drop a directory in `.opencode/scripts/adapters/` with a
+`manifest.yaml` and `run.py`.
 
 ## Initialize a project
 

@@ -21,7 +21,7 @@
 #  - Idempotent: safe to re-run; existing files are overwritten (that's the point), but
 #    user-owned excludes are preserved.
 #  - Adapter-based: canonical files (.opencode/agents/*.md) have tool-agnostic frontmatter.
-#    Adapters inject tool-specific fields during install.
+#    Adapters inject tool-specific fields during install via manifest-driven discovery.
 set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -64,7 +64,7 @@ merge_agents() { # baseline_agents_md consumer_agents_md outfile
     err "merge-agents.sh not found or not executable at $script"
     return 1
   fi
-  if "$script" "$baseline" "" "$consumer" "$outfile"; then
+  if "$script" "$baseline" "" "$consumer" "$outfile" 2>/dev/null; then
     return 0
   else
     err "could not auto-merge $consumer; conflict pair left in place"
@@ -74,21 +74,92 @@ merge_agents() { # baseline_agents_md consumer_agents_md outfile
 
 # --- adapters ---------------------------------------------------------------
 # Canonical agent files have tool-agnostic frontmatter. Adapters inject tool-specific
-# fields during install. Each adapter is a Python script in .opencode/scripts/adapters/.
-run_adapter() { # adapter_name source target extra_args...
-  local adapter="$ROOT/.opencode/scripts/adapters/$1.py"
-  if [ ! -f "$adapter" ]; then
-    note "  Adapter $1 not found, skipping"
-    return 0
-  fi
+# fields during install. Adapters are discovered from .opencode/scripts/adapters/*/
+# directories containing manifest.yaml.
+
+check_python() {
   if command -v python3 >/dev/null 2>&1; then
-    python3 "$adapter" "$@"
+    echo "python3"
   elif command -v python >/dev/null 2>&1; then
-    python "$adapter" "$@"
+    echo "python"
   else
-    err "Python not found; cannot run adapter $1"
+    echo ""
+  fi
+}
+
+run_adapter() { # adapter_name source target agents_md
+  local adapter_name="$1"
+  local source="$2"
+  local target="$3"
+  local agents_md="$4"
+  local adapter_dir="$ROOT/.opencode/scripts/adapters/$adapter_name"
+  local adapter_script="$adapter_dir/run.py"
+  local python_cmd
+
+  python_cmd=$(check_python)
+  if [ -z "$python_cmd" ]; then
+    err "Python not found; cannot run adapter $adapter_name"
     return 1
   fi
+
+  if [ ! -f "$adapter_script" ]; then
+    note "  Adapter $adapter_name not found (missing run.py), skipping"
+    return 0
+  fi
+
+  if [ ! -f "$adapter_dir/manifest.yaml" ]; then
+    note "  Adapter $adapter_name missing manifest.yaml, skipping"
+    return 0
+  fi
+
+  "$python_cmd" "$adapter_script" "$source" "$target" "$agents_md"
+}
+
+# Run all adapters whose generates match the target type
+run_adapters_for_target() { # target_type source_dir target_dir agents_md
+  local target_type="$1"
+  local source_dir="$2"
+  local target_dir="$3"
+  local agents_md="$4"
+  local python_cmd
+  local adapter_name
+
+  python_cmd=$(check_python)
+  if [ -z "$python_cmd" ]; then
+    note "  Python not found; skipping adapter-based transforms"
+    return 0
+  fi
+
+  # Discover adapters via Python helper
+  local adapters_list
+  adapters_list=$("$python_cmd" "$ROOT/.opencode/scripts/adapters/discover.py" 2>/dev/null) || return 0
+
+  while IFS='|' read -r adapter_name priority generates_types; do
+    [ -z "$adapter_name" ] && continue
+
+    # Check if this adapter applies to the target type
+    case "$target_type" in
+      opencode)
+        case "$adapter_name" in
+          opencode|claude-code|cursor|codex|copilot|configs) ;;
+          *) continue ;;
+        esac
+        ;;
+      deepseek)
+        case "$adapter_name" in
+          deepseek|configs) ;;
+          *) continue ;;
+        esac
+        ;;
+      *) continue ;;
+    esac
+
+    note "  Running adapter: $adapter_name"
+    if ! run_adapter "$adapter_name" "$source_dir" "$target_dir" "$agents_md"; then
+      err "  Adapter $adapter_name failed"
+      return 1
+    fi
+  done <<< "$adapters_list"
 }
 
 # --- install into an opencode target -----------------------------------------
@@ -121,9 +192,6 @@ install_opencode() { # target_dir
   copy_tree "$ROOT/.opencode/templates" "$target/templates"
   copy_tree "$ROOT/.opencode/scripts"  "$target/scripts"
 
-  # Run opencode adapter to inject tool-specific frontmatter
-  run_adapter opencode "$ROOT/.opencode/agents" "$target/agents" "$ROOT/AGENTS.md"
-
   # skills — preserve <name>/SKILL.md structure
   for d in "$ROOT"/.opencode/skills/*/; do
     [ -e "$d" ] || continue
@@ -133,8 +201,8 @@ install_opencode() { # target_dir
     [ -e "$d/SKILL.md" ] && copy_file "$d/SKILL.md" "$target/skills/$name/SKILL.md"
   done
 
-  # Generate tool-specific config (if not already present)
-  run_adapter configs "$target" "opencode"
+  # Run adapters for this target
+  run_adapters_for_target "opencode" "$ROOT/.opencode" "$target" "$ROOT/AGENTS.md" || return 1
 }
 
 # --- install into a deepseek target ------------------------------------------
@@ -162,11 +230,8 @@ install_deepseek() { # target_dir
   # agents → .agents/notes/agents/<role>.md
   copy_tree "$ROOT/.opencode/agents" "$target/.agents/notes/agents"
 
-  # Run deepseek adapter to organize reference docs
-  run_adapter deepseek "$ROOT" "$target" "$ROOT/AGENTS.md"
-
-  # Generate tool-specific config (if not already present)
-  run_adapter configs "$target" "deepseek"
+  # Run adapters for this target
+  run_adapters_for_target "deepseek" "$ROOT" "$target" "$ROOT/AGENTS.md" || return 1
 
   # commands → .agents/notes/commands/<name>.md
   copy_tree "$ROOT/.opencode/commands" "$target/.agents/notes/commands"

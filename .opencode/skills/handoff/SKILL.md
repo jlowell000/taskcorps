@@ -57,11 +57,8 @@ prompt, or checkpoint instead of passing by path, use the **TOON format** via th
   - ````
 - Use the header template pattern: `items[N]{field1,field2,field3}:`
 - `[N]` must match the row count
-- Convert with `.opencode/scripts/toon_table.py --encode` (markdown table → TOON) or the
-  `toon-format` skill's CLI (`npx @toon-format/cli`) for JSON↔TOON
-- For team markdown tables, `.opencode/scripts/toon_table.py` is the bridge:
-  - Encode: `python .opencode/scripts/toon_table.py --encode table.md -o table.toon`
-  - Decode: `python .opencode/scripts/toon_table.py --decode table.toon -o table.md`
+- Convert with the `toon-format` skill's CLI (`npx @toon-format/cli`) for JSON↔TOON or
+  markdown table → TOON conversion
 - Auto-detects delimiter (comma or tab) based on cell content; tab is used when
   any cell contains a comma
 - Prefer path-based passing (the tight-context contract) unless the receiving

@@ -1,0 +1,6 @@
+name: git-providers
+description: Abstraction layer for multi-provider Git PR operations
+priority: 1
+requires:
+  python: ">=3.11"
+generates: []

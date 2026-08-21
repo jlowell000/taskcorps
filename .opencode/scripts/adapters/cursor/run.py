@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-cursor.py — adapter for Cursor IDE.
+cursor/run.py — adapter for Cursor IDE.
 
 Generates .cursor/agents/<role>.md files with Cursor frontmatter:
   name, description, model, readonly
@@ -8,14 +8,13 @@ Generates .cursor/agents/<role>.md files with Cursor frontmatter:
 
 from __future__ import annotations
 
-import re
 import sys
-import yaml
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from common import read_file, write_file
+import yaml
+from common import extract_description, parse_frontmatter, read_file, write_file
 
 ROLE_MODEL: dict[str, str] = {
     "pm": "inherit",
@@ -41,20 +40,8 @@ def run(source: Path, target: Path, agents_md: Path) -> None:
             continue
         role = role_file.stem
         text = read_file(role_file)
-
-        # Extract description from existing frontmatter
-        fm_match = re.match(r"\A---\s*\n(.*?)\n---\s*\n?", text, re.DOTALL)
-        if fm_match:
-            try:
-                fm = yaml.safe_load(fm_match.group(1)) or {}
-                description = fm.get("description", "")
-            except Exception:
-                description = ""
-        else:
-            description = ""
-
-        if not description:
-            description = role
+        description = extract_description(text) or role
+        _, body = parse_frontmatter(text)
 
         cursor_fm = {
             "name": role,
@@ -64,12 +51,11 @@ def run(source: Path, target: Path, agents_md: Path) -> None:
         }
 
         fm_block = "---\n" + yaml.dump(cursor_fm, default_flow_style=False, sort_keys=False) + "---\n"
-        body = text[fm_match.end() :] if fm_match else text
         write_file(target / f"{role}.md", fm_block + "\n" + body if body else fm_block)
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: adapters/cursor.py <source_agents_dir> <target_agents_dir> <AGENTS.md>", file=sys.stderr)
+        print("Usage: adapters/cursor/run.py <source_agents_dir> <target_agents_dir> <AGENTS.md>", file=sys.stderr)
         sys.exit(1)
     run(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]))
