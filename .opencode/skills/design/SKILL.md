@@ -24,12 +24,14 @@ enough of the real codebase to ground the design.
  - Config models this task depends on: required fields, types, and defaults. If defaults are
    assumed, state that explicitly. Verify the current schema before writing the test plan so
    drift does not break tests.
- ## Test plan
- - Per acceptance criterion: test name + expected observable behavior
- - Edge cases: boundaries, errors, empty inputs, concurrency, persistence
- - **Floating-point safety:** when testing numeric boundaries, verify equality under IEEE 754
-   (use `math.isclose()` or equal literals). Avoid patterns like `0.1 + 0.2 == 0.3`, which
-   fail even with a correct implementation.
+  ## Test plan
+  - Per acceptance criterion: test name + expected observable behavior
+  - Edge cases: boundaries, errors, empty inputs, concurrency, persistence
+  - **Floating-point safety:** when testing numeric boundaries, verify equality under IEEE 754
+    (use `math.isclose()` or equal literals). Avoid patterns like `0.1 + 0.2 == 0.3`, which
+    fail even with a correct implementation.
+  - **Runtime-checkable Protocols:** when a Protocol is marked `@runtime_checkable`, the test
+    plan must include `isinstance` checks, not just `hasattr`.
  ## Risks & open questions
  - Things the coder must NOT decide themselves; gate via handoff if blocking
  ## Handoff block

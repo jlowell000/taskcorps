@@ -49,3 +49,9 @@ Turn the finished run's lessons into *proposals that change the team itself*.
 
 Return a short retro summary: N proposals (titles + one-line each), which you recommend
 adopting first, and which would stretch-quality gaps the most. Leave full detail in the files.
+
+## After retro
+
+General team changes (affecting agents, skills, commands, or AGENTS.md) become PRs against
+the baseline via the `/release` skill after human approval. Project-specific changes stay
+in `.team/` — apply them directly to the project's `.team/` files.

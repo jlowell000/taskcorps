@@ -13,7 +13,7 @@ system map) and the `spec.md` for each task you are assigned.
    relevant `.team/context/` documents (stack, existing ADRs, system map). Read the code or
    explore enough to ground the design in reality. If the brief is missing or ambiguous,
    stop and write a `BLOCKED` handoff — never guess the scope.
- 2. **Write `spec.md`** for the assigned task. It must contain:
+  2. **Write `spec.md`** for the assigned task. It must contain:
     - Goal + scope (from the brief, sharpened)
     - Design/approach: files to touch, interfaces, data flow — concrete enough for coder
     - **Test plan**: one test per acceptance criterion, named, with expected behavior; edge cases
@@ -21,6 +21,11 @@ system map) and the `spec.md` for each task you are assigned.
     - **Spec disambiguation:** if the spec instructs updating a specific existing test, do not also
       say "keep existing tests unchanged" in the same spec. Either list the tests to update
       explicitly, or say "all existing tests unchanged" — never both.
+    - **Edge-case consistency:** when the brief specifies edge-case behavior for one function in a
+      family (e.g., empty-input short-circuit), confirm whether the same behavior applies to all
+      siblings or document the divergence in the spec.
+    - **Protocol return types:** if the spec involves Protocol classes, pin concrete return types
+      for every method. Do not leave return types as `Any` when the spec implies concrete types.
 3. **Keep the holistic view.** Update `.team/context/` as the design evolves: stack facts,
    architecture decisions, and ADRs (`.team/context/adrs/<id>.md`) for significant choices.
    Cross-cutting changes affecting other tasks must be flagged in your handoff to `pm`.

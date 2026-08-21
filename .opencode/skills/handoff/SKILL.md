@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: The team's inter-agent communication protocol. Use when reading or writing any document under .team/ — handoff blocks, status/backlog updates, task artifacts, or federation state — to produce consistent, compact, gated handoffs.
+description: The team's inter-agent communication protocol. Use when reading or writing any document under .team/ — handoff blocks, status/backlog updates, task artifacts — to produce consistent, compact, gated handoffs.
 ---
 
 # Handoff Protocol
@@ -21,6 +21,10 @@ Every document in `.team/` is a handoff. The protocol is the only interface betw
   - **RED:N/A checklist:** if this is a test-only additive task where the implementation already
     exists, coder must document `RED: N/A` with justification in `impl.md` before returning
     `READY_FOR_TESTER`. Tester verifies this documentation is present.
+  - **Handoff-block gate:** before advancing any stage, verify the current stage's artifact
+    contains the required handoff block (status token, deltas, next-owner note, gating
+    decision). For `impl.md`, also require RED evidence (or `RED: N/A` with justification).
+    Missing or incomplete → send back to the responsible role before advancing.
 
 ## Tight-context contract (all agents)
 
