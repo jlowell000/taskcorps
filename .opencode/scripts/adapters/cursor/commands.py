@@ -23,10 +23,12 @@ def transform(source_dir: Path, target_dir: Path) -> None:
         text = read_file(cmd_file)
         # Replace $ARGUMENTS with $1
         text = text.replace("$ARGUMENTS", "$1")
-        # Prefix command name with @ on the first "Run ..." line
+        # Prefix command name with @ on the first "Run ..." line (after frontmatter)
         lines = text.splitlines()
-        if lines and lines[0].startswith("Run "):
-            cmd_name = cmd_file.stem
-            lines[0] = f"@{cmd_name} " + lines[0].removeprefix("Run ").strip()
-            text = "\n".join(lines)
+        for i, line in enumerate(lines):
+            if line.startswith("Run "):
+                cmd_name = cmd_file.stem
+                lines[i] = f"@{cmd_name} " + line.removeprefix("Run ").strip()
+                break
+        text = "\n".join(lines)
         write_file(target_dir / cmd_file.name, text)

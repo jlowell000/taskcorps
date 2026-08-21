@@ -138,8 +138,17 @@ fi
 mkdir -p "$TEAM/scripts"
 for f in "$ROOT"/.opencode/scripts/*; do
   [ -e "$f" ] || continue
-  cp -p "$f" "$TEAM/scripts/"
-  note "  + .team/scripts/$(basename "$f")"
+  if [ -d "$f" ]; then
+    mkdir -p "$TEAM/scripts/$(basename "$f")"
+    for sub in "$f"/*; do
+      [ -e "$sub" ] || continue
+      cp -p "$sub" "$TEAM/scripts/$(basename "$f")/"
+      note "  + .team/scripts/$(basename "$f")/$(basename "$sub")"
+    done
+  else
+    cp -p "$f" "$TEAM/scripts/"
+    note "  + .team/scripts/$(basename "$f")"
+  fi
 done
 
 # --- update .gitignore ------------------------------------------------------
