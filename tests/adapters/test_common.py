@@ -13,7 +13,8 @@ sys.path.insert(0, sys_path)
 
 from common import (
     copy_file,
-    copy_tree,
+    copy_flat,
+    copy_tree_recursive,
     ensure_frontmatter,
     extract_description,
     inject_frontmatter,
@@ -101,12 +102,23 @@ class TestFileIO:
         assert dst.exists()
         assert read_file(dst) == "content"
 
-    def test_copy_tree(self, tmp_path: Path):
+    def test_copy_flat(self, tmp_path: Path):
         src = tmp_path / "src"
         dst = tmp_path / "dst"
         src.mkdir()
         (src / "a.md").write_text("a")
         (src / "b.md").write_text("b")
-        copy_tree(src, dst)
+        copy_flat(src, dst)
         assert (dst / "a.md").exists()
         assert (dst / "b.md").exists()
+
+    def test_copy_tree_recursive(self, tmp_path: Path):
+        src = tmp_path / "src"
+        dst = tmp_path / "dst"
+        src.mkdir()
+        (src / "sub").mkdir()
+        (src / "a.md").write_text("a")
+        (src / "sub" / "b.md").write_text("b")
+        copy_tree_recursive(src, dst)
+        assert (dst / "a.md").exists()
+        assert (dst / "sub" / "b.md").exists()

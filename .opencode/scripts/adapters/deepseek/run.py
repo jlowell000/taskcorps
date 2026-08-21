@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from common import copy_file, copy_tree, read_file, write_file
+from common import copy_file, copy_flat, read_file, write_file
 
 
 def run(source: Path, target: Path, agents_md: Path) -> None:
@@ -36,17 +36,17 @@ def run(source: Path, target: Path, agents_md: Path) -> None:
     # agents -> .agents/notes/agents/<role>.md
     agents_src = source / "agents"
     if agents_src.exists():
-        copy_tree(agents_src, target / ".agents" / "notes" / "agents")
+        copy_flat(agents_src, target / ".agents" / "notes" / "agents")
 
     # commands -> .agents/notes/commands/<name>.md
     commands_src = source / "commands"
     if commands_src.exists():
-        copy_tree(commands_src, target / ".agents" / "notes" / "commands")
+        copy_flat(commands_src, target / ".agents" / "notes" / "commands")
 
     # templates -> .agents/notes/templates/<name>.md
     templates_src = source / "templates"
     if templates_src.exists():
-        copy_tree(templates_src, target / ".agents" / "notes" / "templates")
+        copy_flat(templates_src, target / ".agents" / "notes" / "templates")
 
     # skills -> .agents/skills/<name>/SKILL.md (alongside existing dsh-* skills)
     skills_src = source / "skills"
