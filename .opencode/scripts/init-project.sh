@@ -5,7 +5,14 @@
 #   init-project.sh [TARGET_DIR]
 #
 # Idempotent: safe to re-run; existing files are preserved (won't overwrite).
-set -u
+set -euo pipefail
+
+usage() {
+  echo "Usage: init-project.sh [TARGET_DIR]"
+  exit 1
+}
+
+[ $# -le 1 ] || usage
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
@@ -25,22 +32,26 @@ mkdir -p "$TEAM/context/adrs" \
          "$TEAM/proposals" \
          "$TEAM/scripts"
 
-# Copy skeleton files from templates if they don't already exist
-for f in "$ROOT"/.opencode/templates/*.md; do
-  [ -e "$f" ] || continue
-  local name
+copy_template() { # src dest
+  local f="$1" dest="$2" name
   name=$(basename "$f")
-  case "$name" in
-    brief.md)   dest="$TEAM/tasks/EXAMPLE.md" ;;
-    spec.md)    dest="$TEAM/context/spec-example.md" ;;
-    *)          dest="$TEAM/$name" ;;
-  esac
   if [ ! -f "$dest" ]; then
     cp -p "$f" "$dest"
     note "  + .team/$(basename "$dest")"
   else
     note "  ~ .team/$(basename "$dest") (exists, skipped)"
   fi
+}
+
+# Copy skeleton files from templates if they don't already exist
+for f in "$ROOT"/.opencode/templates/*.md; do
+  [ -e "$f" ] || continue
+  case "$(basename "$f")" in
+    brief.md)   dest="$TEAM/tasks/EXAMPLE.md" ;;
+    spec.md)    dest="$TEAM/context/spec-example.md" ;;
+    *)          dest="$TEAM/$(basename "$f")" ;;
+  esac
+  copy_template "$f" "$dest"
 done
 
 # Create backlog.md and status.md if missing
@@ -136,18 +147,27 @@ fi
 # Scripts are versioned in .opencode/scripts/ (the source of truth). Copy them to
 # .team/scripts/ at runtime so agents can find them via the .team/ path.
 mkdir -p "$TEAM/scripts"
+copy_script() { # src dest_dir
+  local src="$1" dest_dir="$2"
+  cp -p "$src" "$dest_dir/"
+  note "  + .team/scripts/$(basename "$dest_dir")/$(basename "$src")"
+}
+copy_script_dir() { # src_dir dest_dir
+  local src_dir="$1" dest_dir="$2"
+  mkdir -p "$dest_dir"
+  for sub in "$src_dir"/*; do
+    [ -e "$sub" ] || continue
+    cp -p "$sub" "$dest_dir/"
+    note "  + .team/scripts/$(basename "$dest_dir")/$(basename "$sub")"
+  done
+}
+
 for f in "$ROOT"/.opencode/scripts/*; do
   [ -e "$f" ] || continue
   if [ -d "$f" ]; then
-    mkdir -p "$TEAM/scripts/$(basename "$f")"
-    for sub in "$f"/*; do
-      [ -e "$sub" ] || continue
-      cp -p "$sub" "$TEAM/scripts/$(basename "$f")/"
-      note "  + .team/scripts/$(basename "$f")/$(basename "$sub")"
-    done
+    copy_script_dir "$f" "$TEAM/scripts/$(basename "$f")"
   else
-    cp -p "$f" "$TEAM/scripts/"
-    note "  + .team/scripts/$(basename "$f")"
+    copy_script "$f" "$TEAM/scripts"
   fi
 done
 

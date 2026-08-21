@@ -82,12 +82,17 @@ def copy_file(src: Path, dst: Path) -> None:
     shutil.copy2(src, dst)
 
 
-def copy_tree(src: Path, dst: Path) -> None:
+def copy_flat(src: Path, dst: Path) -> None:
     """Flat copy all files from src/ into dst/ (no recursion into subdirs of src)."""
     dst.mkdir(parents=True, exist_ok=True)
     for f in src.iterdir():
         if f.is_file():
             shutil.copy2(f, dst / f.name)
+
+
+def copy_tree_recursive(src: Path, dst: Path) -> None:
+    """Recursively copy src/ tree into dst/, preserving subdirectory structure."""
+    shutil.copytree(src, dst, dirs_exist_ok=True)
 
 
 # ---------------------------------------------------------------------------
@@ -169,6 +174,7 @@ def discover_adapters(adapters_dir: Path) -> list[dict]:
     """Scan adapters_dir for directories containing manifest.yaml.
 
     Returns a list of manifest dicts sorted by priority (highest first).
+    Prints a warning to stderr for each invalid manifest encountered.
     """
     adapters: list[dict] = []
     if not adapters_dir.is_dir():
@@ -180,7 +186,8 @@ def discover_adapters(adapters_dir: Path) -> list[dict]:
             manifest = load_manifest(d)
             manifest["_dir"] = d
             adapters.append(manifest)
-        except ValueError:
+        except ValueError as e:
+            print(f"WARNING: skipping adapter {d.name}: {e}", file=sys.stderr)
             continue
     adapters.sort(key=lambda m: m.get("priority", 0), reverse=True)
     return adapters

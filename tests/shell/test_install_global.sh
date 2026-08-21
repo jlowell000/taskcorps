@@ -60,6 +60,72 @@ for manifest in "$SCRIPT_DIR"/adapters/*/manifest.yaml; do
   check "yaml_$(basename "$(dirname "$manifest")")" 0 $?
 done
 
+# --- failure-path tests -------------------------------------------------------
+
+# T5: --dry-run --all lists targets without writing
+dir="$(mktemp -d)"
+output="$("$INSTALL_SCRIPT" --all --dry-run 2>&1)"
+rc=$?
+check "dry_run_all_lists_targets" 0 "$rc"
+echo "$output" | grep -q 'dry-run'
+check "dry_run_all_output_mentions_done" 0 $?
+rm -rf "$dir"
+
+# T6: --target single target
+dir="$(mktemp -d)"
+target_dir="$dir/my-opencode"
+mkdir -p "$target_dir"
+output="$("$INSTALL_SCRIPT" --target "opencode|$target_dir" 2>&1)"
+rc=$?
+check "target_single_rc" 0 "$rc"
+echo "$output" | grep -q 'Installing into'
+check "target_single_installed" 0 $?
+rm -rf "$dir"
+
+# T7: --targets-file reads newline-delimited targets
+dir="$(mktemp -d)"
+target_dir="$dir/my-target"
+mkdir -p "$target_dir"
+tf="$dir/targets.txt"
+printf 'opencode|%s\n' "$target_dir" > "$tf"
+output="$("$INSTALL_SCRIPT" --targets-file "$tf" 2>&1)"
+rc=$?
+check "targets_file_rc" 0 "$rc"
+echo "$output" | grep -q 'Installing into'
+check "targets_file_installed" 0 $?
+rm -rf "$dir"
+
+# T8: merge-agents conflict (exit 2) writes .md.new fallback
+dir="$(mktemp -d)"
+target_dir="$dir/my-target"
+mkdir -p "$target_dir"
+# Consumer with no marker (custom content that can't be split)
+cat > "$target_dir/AGENTS.md" <<EOF
+# Consumer
+custom content here
+EOF
+rc=0
+"$INSTALL_SCRIPT" --target "opencode|$target_dir" 2>"$dir/stderr.txt" || rc=$?
+# merge conflict is non-fatal; install continues. Verify .md.new fallback was created.
+if [ -f "$target_dir/AGENTS.md.new" ]; then
+  check "merge_conflict_creates_new_fallback" 0 0
+else
+  check "merge_conflict_creates_new_fallback" 0 1
+fi
+rm -rf "$dir"
+
+# T9: invalid --target type rejected
+dir="$(mktemp -d)"
+rc=0
+"$INSTALL_SCRIPT" --target "invalid|$dir" 2>/dev/null || rc=$?
+check "invalid_target_type_rejected" 1 "$rc"
+rm -rf "$dir"
+
+# T10: --all and --target cannot be combined
+rc=0
+"$INSTALL_SCRIPT" --all --target "opencode|/tmp" 2>/dev/null || rc=$?
+check "all_and_target_mutually_exclusive" 1 "$rc"
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 if [ "$fail" -gt 0 ]; then
   printf 'Failed: %s\n' "${failures[*]}"

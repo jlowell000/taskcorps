@@ -45,6 +45,15 @@ check "idempotent_rerun" 'test $? -eq 0'
 
 rm -rf "$dir"
 
+# --- failure-path tests -------------------------------------------------------
+
+# I5: set -euo pipefail doesn't break on local in loops (now inside functions)
+dir="$(mktemp -d)"
+# Run with explicit pipefail to catch any issues
+bash -euo pipefail "$INIT_SCRIPT" "$dir" >/dev/null 2>&1
+check "strict_mode_no_local_error" '[ $? -eq 0 ]'
+rm -rf "$dir"
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 if [ "$fail" -gt 0 ]; then
   printf 'Failed: %s\n' "${failures[*]}"

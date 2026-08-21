@@ -3,7 +3,7 @@
 # replacing only the content above the project-tail marker while preserving the consumer's
 # project-specific additions below it.
 #
-#   merge-agents.sh <baseline> <prev> <consumer> <outfile>
+#   merge-agents.sh <baseline> [<prev>] <consumer> <outfile>
 #
 #   <baseline>  the newly released AGENTS.md (already ends with the marker)
 #   <prev>      the consumer's previous baseline snapshot; pass "" when none exists
@@ -18,11 +18,24 @@
 # The merge never loses data: a consumer with no marker is either a pure baseline copy
 # (identical to <prev>) -> adopt the new baseline wholesale, or it carries custom content
 # that cannot be split reliably -> conflict.
-set -u
+set -euo pipefail
+
+usage() {
+  echo "Usage: merge-agents.sh <baseline> [<prev>] <consumer> <outfile>"
+  exit 1
+}
+
+[ $# -ge 3 ] && [ $# -le 4 ] || usage
 
 MARK_PAT='Project-specific additions belong BELOW this line'
 
-baseline="$1"; prev="${2:-}"; consumer="${3:-}"; outfile="$4"
+baseline="$1"
+if [ $# -eq 4 ]; then
+  prev="$2"; consumer="$3"; outfile="$4"
+else
+  prev=""; consumer="$2"; outfile="$3"
+fi
+
 note() { echo "merge-agents: $*" >&2; }
 
 [ -f "$baseline" ]  || { note "baseline not found: $baseline"; exit 127; }
@@ -32,7 +45,9 @@ note() { echo "merge-agents: $*" >&2; }
 # release wholesale. Checked FIRST so a pristine copy is adopted regardless of whether
 # it carries the marker (a pristine copy of <prev> inherently contains the marker).
 if [ -n "$prev" ] && [ -f "$prev" ] && cmp -s "$prev" "$consumer"; then
-  cp -p "$baseline" "$outfile"; note "pure baseline copy -> adopted new release wholesale"; exit 0
+  cp -p "$baseline" "$outfile"
+  note "pure baseline copy -> adopted new release wholesale"
+  exit 0
 fi
 
 # Owned portion = everything above the marker in the baseline; it already ends with the marker.
@@ -41,11 +56,11 @@ owned="$(cat "$baseline")"
 # Tail = the consumer's content BELOW the baseline's marker comment (preserved verbatim).
 # The consumer's tail after its own marker line begins with the baseline's own marker-comment
 # tail (redundant baseline-owned content); skip those lines so only the project appends remain.
-mln="$(grep -n -m1 -F "$MARK_PAT" "$consumer" 2>/dev/null | cut -d: -f1)"
-if [ -n "$mln" ]; then
-  bmln="$(grep -n -m1 -F "$MARK_PAT" "$baseline" 2>/dev/null | cut -d: -f1)"
-  btail_lines=0
-  if [ -n "$bmln" ]; then
+  mln="$(grep -n -m1 -F "$MARK_PAT" "$consumer" 2>/dev/null | cut -d: -f1 || true)"
+  if [ -n "$mln" ]; then
+    bmln="$(grep -n -m1 -F "$MARK_PAT" "$baseline" 2>/dev/null | cut -d: -f1 || true)"
+    btail_lines=0
+    if [ -n "$bmln" ]; then
     # Count actual lines (not newlines) so a file with no trailing newline (e.g. the real
     # AGENTS.md) is not undercounted by 1, which would leak the marker-comment's closing
     # `==== -->` into the preserved tail. awk's NR is robust regardless of trailing newline.
@@ -61,7 +76,9 @@ fi
 
 # --- stitch: owned release + blank separator + preserved tail (trailing newlines restored) ---
 {
-  printf '%s\n\n\n%s\n\n' "$owned" "$tail"
+  printf '%s\n' "$owned"
+  printf '\n'
+  printf '%s\n' "$tail"
 } > "$outfile"
 note "merged: owned(baseline) + preserved tail ($(printf '%s' "$tail" | wc -l) lines)"
 exit 0

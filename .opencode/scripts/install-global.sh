@@ -7,6 +7,12 @@
 #   Opencode projects: ~/Projects/*/.opencode/
 #   Deepseek projects: ~/Projects/*/.agents/
 #
+# Flags:
+#   --all            install into all discovered targets (non-interactive)
+#   --target TYPE|PATH  install into a single target (repeatable)
+#   --targets-file FILE  read newline-delimited TYPE|PATH targets from FILE
+#   --dry-run        print what would be done without writing
+#
 # Design notes:
 #  - Source is the taskcorps working tree (.opencode/ + AGENTS.md + CLAUDE.md), never a
 #    release snapshot — there is no versioning in the new model.
@@ -22,37 +28,60 @@
 #    user-owned excludes are preserved.
 #  - Adapter-based: canonical files (.opencode/agents/*.md) have tool-agnostic frontmatter.
 #    Adapters inject tool-specific fields during install via manifest-driven discovery.
-set -u
+set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
-# --- helpers ----------------------------------------------------------------
-note() { printf '  %s\n' "$*"; }
-err()  { printf '  FAIL: %s\n' "$*"; return 1; }
-
-copy_file() { # src dst
-  if cp -p "$1" "$2" 2>/dev/null; then
-    note "  + $(basename "$2")"
-    return 0
-  else
-    err "  failed to copy $(basename "$1") to $2"
-    return 1
-  fi
+# --- args ---------------------------------------------------------------------
+usage() {
+  echo "Usage: install-global.sh [--all] [--target TYPE|PATH]... [--targets-file FILE] [--dry-run]"
+  exit 1
 }
 
-copy_tree() { # src_dir dst_dir
-  # Copies all files and directories from src_dir into dst_dir, creating dst_dir if needed.
-  # Recurses into subdirectories of src_dir.
+ALL_MODE=0
+DRY_RUN=0
+declare -a TARGET_ARGS=()
+TARGETS_FILE=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --all)          ALL_MODE=1; shift ;;
+    --target)       TARGET_ARGS+=("$2"); shift 2 ;;
+    --targets-file) TARGETS_FILE="$2"; shift 2 ;;
+    --dry-run)      DRY_RUN=1; shift ;;
+    *)              usage ;;
+  esac
+done
+
+if [ "$ALL_MODE" -eq 1 ] && [ "${#TARGET_ARGS[@]}" -gt 0 ]; then
+  echo "Cannot combine --all with --target." >&2
+  usage
+fi
+
+if [ -n "$TARGETS_FILE" ] && [ "${#TARGET_ARGS[@]}" -gt 0 ]; then
+  echo "Cannot combine --targets-file with --target." >&2
+  usage
+fi
+
+# --- helpers ------------------------------------------------------------------
+note() { printf '  %s\n' "$*"; }
+err()  { printf '  FAIL: %s\n' "$*" >&2; return 1; }
+
+copy_file() { # src dst
+  cp -p "$1" "$2"
+  note "  + $(basename "$2")"
+}
+
+copy_flat() { # src_dir dst_dir
+  # Flat copy — does NOT recurse into subdirs of src.
   mkdir -p "$2"
-  local src="$1" dst="$2" count=0
+  local src="$1" dst="$2"
   for f in "$src"/*; do
     [ -e "$f" ] || continue
-    if cp -rp "$f" "$dst/" 2>/dev/null; then
-      count=$((count + 1))
-    fi
+    cp -p "$f" "$dst/"
   done
-  note "  + $count item(s) → $(basename "$dst")/"
+  note "  + flat copy → $(basename "$dst")/"
 }
 
 # Surgical AGENTS.md merge: replace baseline-owned content above the marker,
@@ -64,15 +93,23 @@ merge_agents() { # baseline_agents_md consumer_agents_md outfile
     err "merge-agents.sh not found or not executable at $script"
     return 1
   fi
-  if "$script" "$baseline" "" "$consumer" "$outfile" 2>/dev/null; then
+  local rc=0
+  "$script" "$baseline" "" "$consumer" "$outfile" || rc=$?
+  if [ "$rc" -eq 0 ]; then
     return 0
+  elif [ "$rc" -eq 2 ]; then
+    # Conflict: consumer has custom content that can't be split safely.
+    # Write baseline to .md.new as a fallback so the human can reconcile.
+    err "merge conflict in $consumer (exit 2); wrote baseline to ${outfile}.new"
+    cp -p "$baseline" "${outfile}.new"
+    return 2
   else
-    err "could not auto-merge $consumer; conflict pair left in place"
+    err "could not auto-merge $consumer (exit $rc)"
     return 1
   fi
 }
 
-# --- adapters ---------------------------------------------------------------
+# --- adapters -----------------------------------------------------------------
 # Canonical agent files have tool-agnostic frontmatter. Adapters inject tool-specific
 # fields during install. Adapters are discovered from .opencode/scripts/adapters/*/
 # directories containing manifest.yaml.
@@ -115,7 +152,7 @@ run_adapter() { # adapter_name source target agents_md
   "$python_cmd" "$adapter_script" "$source" "$target" "$agents_md"
 }
 
-# Run all adapters whose generates match the target type
+# Run adapters pre-filtered by discover.py for the given target type
 run_adapters_for_target() { # target_type source_dir target_dir agents_md
   local target_type="$1"
   local source_dir="$2"
@@ -130,29 +167,12 @@ run_adapters_for_target() { # target_type source_dir target_dir agents_md
     return 0
   fi
 
-  # Discover adapters via Python helper
+  # Discover adapters filtered by target type (filtering moved into discover.py)
   local adapters_list
-  adapters_list=$("$python_cmd" "$ROOT/.opencode/scripts/adapters/discover.py" 2>/dev/null) || return 0
+  adapters_list=$("$python_cmd" "$ROOT/.opencode/scripts/adapters/discover.py" --target-type "$target_type")
 
   while IFS='|' read -r adapter_name priority generates_types; do
     [ -z "$adapter_name" ] && continue
-
-    # Check if this adapter applies to the target type
-    case "$target_type" in
-      opencode)
-        case "$adapter_name" in
-          opencode|claude-code|cursor|codex|copilot|configs) ;;
-          *) continue ;;
-        esac
-        ;;
-      deepseek)
-        case "$adapter_name" in
-          deepseek|configs) ;;
-          *) continue ;;
-        esac
-        ;;
-      *) continue ;;
-    esac
 
     note "  Running adapter: $adapter_name"
     if ! run_adapter "$adapter_name" "$source_dir" "$target_dir" "$agents_md"; then
@@ -162,7 +182,7 @@ run_adapters_for_target() { # target_type source_dir target_dir agents_md
   done <<< "$adapters_list"
 }
 
-# --- install into an opencode target -----------------------------------------
+# --- install into an opencode target ------------------------------------------
 install_opencode() { # target_dir
   local target="$1"
 
@@ -179,12 +199,16 @@ install_opencode() { # target_dir
 
   # AGENTS.md — surgical merge (preserve local tail below marker)
   if [ -f "$target/AGENTS.md" ]; then
-    if merge_agents "$ROOT/AGENTS.md" "$target/AGENTS.md" "$target/AGENTS.md.new"; then
-      mv -f "$target/AGENTS.md.new" "$target/AGENTS.md"
+    if merge_agents "$ROOT/AGENTS.md" "$target/AGENTS.md" "$target/AGENTS.md"; then
       note "  AGENTS.md: surgically merged (local tail preserved)"
     else
-      cp -p "$ROOT/AGENTS.md" "$target/AGENTS.md.new"
-      note "  AGENTS.md: merge failed; wrote release to AGENTS.md.new (original untouched)"
+      rc=$?
+      if [ "$rc" -eq 2 ]; then
+        note "  AGENTS.md: merge conflict; baseline saved to AGENTS.md.new (original untouched)"
+      else
+        err "  AGENTS.md: merge failed (exit $rc)"
+        return 1
+      fi
     fi
   else
     copy_file "$ROOT/AGENTS.md" "$target/AGENTS.md"
@@ -194,10 +218,10 @@ install_opencode() { # target_dir
   [ -f "$ROOT/CLAUDE.md" ] && copy_file "$ROOT/CLAUDE.md" "$target/CLAUDE.md"
 
   # agents, commands, skills, templates — flat copy (canonical, tool-agnostic)
-  copy_tree "$ROOT/.opencode/agents"   "$target/agents"
-  copy_tree "$ROOT/.opencode/commands" "$target/commands"
-  copy_tree "$ROOT/.opencode/templates" "$target/templates"
-  copy_tree "$ROOT/.opencode/scripts"  "$target/scripts"
+  copy_flat "$ROOT/.opencode/agents"   "$target/agents"
+  copy_flat "$ROOT/.opencode/commands" "$target/commands"
+  copy_flat "$ROOT/.opencode/templates" "$target/templates"
+  copy_flat "$ROOT/.opencode/scripts"  "$target/scripts"
 
   # skills — preserve <name>/SKILL.md structure
   for d in "$ROOT"/.opencode/skills/*/; do
@@ -242,16 +266,16 @@ install_deepseek() { # target_dir
     copy_file "$ROOT/CLAUDE.md" "$target/.agents/notes/taskcorps-CLAUDE.md"
 
   # agents → .agents/notes/agents/<role>.md
-  copy_tree "$ROOT/.opencode/agents" "$target/.agents/notes/agents"
+  copy_flat "$ROOT/.opencode/agents" "$target/.agents/notes/agents"
 
   # Run adapters for this target
   run_adapters_for_target "deepseek" "$ROOT" "$target" "$ROOT/AGENTS.md" || return 1
 
   # commands → .agents/notes/commands/<name>.md
-  copy_tree "$ROOT/.opencode/commands" "$target/.agents/notes/commands"
+  copy_flat "$ROOT/.opencode/commands" "$target/.agents/notes/commands"
 
   # templates → .agents/notes/templates/<name>.md
-  copy_tree "$ROOT/.opencode/templates" "$target/.agents/notes/templates"
+  copy_flat "$ROOT/.opencode/templates" "$target/.agents/notes/templates"
 
   # skills → .agents/skills/<name>/SKILL.md (alongside existing dsh-* skills)
   for d in "$ROOT"/.opencode/skills/*/; do
@@ -263,7 +287,7 @@ install_deepseek() { # target_dir
   done
 }
 
-# --- user-owned file excludes (never overwrite) ------------------------------
+# --- user-owned file excludes (never overwrite) -------------------------------
 is_user_owned_opencode() { # path
   case "$(basename "$1")" in
     opencode.json|opencode.jsonc|.gitignore|package.json|package-lock.json|bun.lock) return 0 ;;
@@ -284,43 +308,84 @@ is_user_owned_deepseek() { # path
   return 1
 }
 
-# --- discover targets -------------------------------------------------------
+# --- target discovery ---------------------------------------------------------
 declare -a TARGETS=()   # "type|path"
 declare -a LABELS=()    # human-readable label per target
 
-# Opencode global
-if [ -d "$HOME/.config/opencode" ]; then
-  TARGETS+=("opencode|$HOME/.config/opencode")
-  LABELS+=("Opencode global (~/.config/opencode/)")
+add_target() { # type path label
+  TARGETS+=("$1|$2")
+  LABELS+=("$3")
+}
+
+discover_targets() {
+  # Opencode global
+  if [ -d "$HOME/.config/opencode" ]; then
+    add_target "opencode" "$HOME/.config/opencode" "Opencode global (~/.config/opencode/)"
+  fi
+
+  # Deepseek global
+  if [ -d "$HOME/.dsh" ]; then
+    add_target "deepseek" "$HOME/.dsh" "Deepseek global (~/.dsh/)"
+  fi
+
+  # Opencode project-local
+  for d in "$HOME"/Projects/*/.opencode; do
+    [ -d "$d" ] || continue
+    # Skip the baseline itself
+    [ "$(cd "$d" && pwd)" = "$ROOT" ] && continue
+    local project
+    project=$(basename "$(dirname "$d")")
+    add_target "opencode" "$d" "Opencode project ($project)"
+  done
+
+  # Deepseek project-local
+  for d in "$HOME"/Projects/*/.agents; do
+    [ -d "$d" ] || continue
+    # Skip the baseline itself
+    [ "$(cd "$d" && pwd)" = "$ROOT" ] && continue
+    local project
+    project=$(basename "$(dirname "$d")")
+    add_target "deepseek" "$d" "Deepseek project ($project)"
+  done
+}
+
+load_targets_from_file() { # file
+  local file="$1"
+  [ -f "$file" ] || { err "targets-file not found: $file"; return 1; }
+  while IFS='|' read -r type path; do
+    # skip blanks and comments
+    [ -z "$type" ] && continue
+    case "$type" in
+      \#*) continue ;;
+    esac
+    # trim whitespace
+    type=$(echo "$type" | xargs)
+    path=$(echo "$path" | xargs)
+    case "$type" in
+      opencode|deepseek) ;;
+      *) err "invalid target type in targets-file: $type"; return 1 ;;
+    esac
+    [ -d "$path" ] || { err "target path not a directory: $path"; return 1; }
+    add_target "$type" "$path" "$type @ $path"
+  done < "$file"
+}
+
+# If explicit targets provided via --target, use them directly (skip discovery)
+if [ "${#TARGET_ARGS[@]}" -gt 0 ]; then
+  for t in "${TARGET_ARGS[@]}"; do
+    IFS='|' read -r type path <<< "$t"
+    case "$type" in
+      opencode|deepseek) ;;
+      *) err "invalid --target type: $type (expected opencode or deepseek)"; exit 1 ;;
+    esac
+    [ -d "$path" ] || { err "target path not a directory: $path"; exit 1; }
+    add_target "$type" "$path" "$type @ $path"
+  done
+elif [ -n "$TARGETS_FILE" ]; then
+  load_targets_from_file "$TARGETS_FILE"
+else
+  discover_targets
 fi
-
-# Deepseek global
-if [ -d "$HOME/.dsh" ]; then
-  TARGETS+=("deepseek|$HOME/.dsh")
-  LABELS+=("Deepseek global (~/.dsh/)")
-fi
-
-# Opencode project-local
-for d in "$HOME"/Projects/*/.opencode; do
-  [ -d "$d" ] || continue
-  # Skip the baseline itself
-  [ "$(cd "$d" && pwd)" = "$ROOT" ] && continue
-  local project
-  project=$(basename "$(dirname "$d")")
-  TARGETS+=("opencode|$d")
-  LABELS+=("Opencode project ($project)")
-done
-
-# Deepseek project-local
-for d in "$HOME"/Projects/*/.agents; do
-  [ -d "$d" ] || continue
-  # Skip the baseline itself
-  [ "$(cd "$d" && pwd)" = "$ROOT" ] && continue
-  local project
-  project=$(basename "$(dirname "$d")")
-  TARGETS+=("deepseek|$d")
-  LABELS+=("Deepseek project ($project)")
-done
 
 if [ "${#TARGETS[@]}" -eq 0 ]; then
   echo "== install-global: no targets found =="
@@ -329,48 +394,79 @@ if [ "${#TARGETS[@]}" -eq 0 ]; then
   echo "    ~/.dsh/              (deepseek global)"
   echo "    ~/Projects/<name>/.opencode/  (opencode project)"
   echo "    ~/Projects/<name>/.agents/    (deepseek project)"
+  echo "  Or use --targets-file FILE with newline-delimited TYPE|PATH entries."
   echo "  Nothing to do."
   exit 0
 fi
 
-# --- prompt for selection ---------------------------------------------------
-echo "== install-global: discovered ${#TARGETS[@]} target(s) =="
-for i in "${!LABELS[@]}"; do
-  printf '  [%d] %s\n' "$((i + 1))" "${LABELS[$i]}"
-done
-printf '  [a] all\n'
-printf '  [q] quit\n'
-echo
+# --- select targets -----------------------------------------------------------
+SELECTED=()
 
-read -rp "Install into which? (comma-separated indices, 'a' for all, or 'q' to quit): " choice
+if [ "$ALL_MODE" -eq 1 ]; then
+  SELECTED=("${!TARGETS[@]}")
+elif [ "${#TARGET_ARGS[@]}" -gt 0 ] || [ -n "$TARGETS_FILE" ]; then
+  # Explicit targets were already loaded; select them all
+  SELECTED=("${!TARGETS[@]}")
+elif [ "$DRY_RUN" -eq 1 ]; then
+  # Dry-run still needs selection; default to all for convenience
+  SELECTED=("${!TARGETS[@]}")
+else
+  echo "== install-global: discovered ${#TARGETS[@]} target(s) =="
+  for i in "${!LABELS[@]}"; do
+    printf '  [%d] %s\n' "$((i + 1))" "${LABELS[$i]}"
+  done
+  printf '  [a] all\n'
+  printf '  [q] quit\n'
+  echo
 
-case "$choice" in
-  q|Q) echo "Aborted."; exit 0 ;;
-  a|A) SELECTED=("${!TARGETS[@]}") ;;
-  *)    # Parse comma-separated indices
-    SELECTED=()
-    IFS=',' read -ra PARTS <<< "$choice"
-    for p in "${PARTS[@]}"; do
-      p=$(echo "$p" | tr -d ' ')
-      if [[ "$p" =~ ^[0-9]+$ ]] && [ "$p" -ge 1 ] && [ "$p" -le "${#TARGETS[@]}" ]; then
-        SELECTED+=("$((p - 1))")
-      else
-        echo "Invalid selection: $p (expected 1-${#TARGETS[@]})"
-        exit 1
-      fi
-    done
-    [ "${#SELECTED[@]}" -gt 0 ] || { echo "No valid selections."; exit 1; }
-    ;;
-esac
+  read -rp "Install into which? (comma-separated indices, 'a' for all, or 'q' to quit): " choice
 
-# --- install ---------------------------------------------------------------
+  case "$choice" in
+    q|Q) echo "Aborted."; exit 0 ;;
+    a|A) SELECTED=("${!TARGETS[@]}") ;;
+    *)    # Parse comma-separated indices
+      SELECTED=()
+      IFS=',' read -ra PARTS <<< "$choice"
+      for p in "${PARTS[@]}"; do
+        p=$(echo "$p" | tr -d ' ')
+        if [[ "$p" =~ ^[0-9]+$ ]] && [ "$p" -ge 1 ] && [ "$p" -le "${#TARGETS[@]}" ]; then
+          SELECTED+=("$((p - 1))")
+        else
+          echo "Invalid selection: $p (expected 1-${#TARGETS[@]})"
+          exit 1
+        fi
+      done
+      [ "${#SELECTED[@]}" -gt 0 ] || { echo "No valid selections."; exit 1; }
+      ;;
+  esac
+fi
+
+# --- install ------------------------------------------------------------------
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "== install-global: dry-run — would install into ${#SELECTED[@]} target(s) =="
+  for idx in "${SELECTED[@]}"; do
+    echo "  ${LABELS[$idx]}"
+  done
+  exit 0
+fi
+
 fail=0
 for idx in "${SELECTED[@]}"; do
   IFS='|' read -r type path <<< "${TARGETS[$idx]}"
   case "$type" in
-    opencode) install_opencode "$path" || fail=1 ;;
-    deepseek) install_deepseek "$path" || fail=1 ;;
-    *)        err "unknown target type: $type"; fail=1 ;;
+    opencode)
+      if ! install_opencode "$path"; then
+        err "install_opencode failed for $path"
+        fail=1
+      fi
+      ;;
+    deepseek)
+      if ! install_deepseek "$path"; then
+        err "install_deepseek failed for $path"
+        fail=1
+      fi
+      ;;
+    *) err "unknown target type: $type"; fail=1 ;;
   esac
 done
 
