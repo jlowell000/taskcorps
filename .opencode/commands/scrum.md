@@ -10,7 +10,7 @@ Follow this exact pipeline and drive it to completion:
 1. READ first: `AGENTS.md`, `.team/status.md`, `.team/backlog.md`, latest checkpoint in `.team/checkpoints/` (if resuming).
 2. PROMPT the human for the **working branch** name (no default); record it in the run id /
    checkpoint. Agents work on this branch; the default branch name is detected via
-   `.team/scripts/default-branch.sh`, never hardcoded. **Humans** merge the working branch to the
+   `.opencode/scripts/default-branch.sh`, never hardcoded. **Humans** merge the working branch to the
    default branch — pm never merges or pushes to it.
 3. CREATE the run id: `YYYYMMDD-<objective-slug>`; write it to `.team/checkpoints/README.md` as the `latest` pointer.
 4. DECOMPOSE the objective into backlog items (use the `decompose` skill) with **run-scoped ids** (`<run>-T<n>`). Create `.team/tasks/<run>-T<n>/` folders with `brief.md`.

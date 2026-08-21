@@ -14,7 +14,7 @@ Owner: tester. Copy to `.team/tasks/<id>/report.md`.
 | 1 | high/med/low | file:line | <steps> | <what breaks> |
 
 Optional: inline findings as TOON when this report will be consumed by an LLM
-prompt (fenced ```toon block). Convert with `.team/scripts/toon_table.py --encode`.
+prompt (fenced ```toon block). Convert with `.opencode/scripts/toon_table.py --encode`.
 
 ## Risks (unverified suspicions)
 

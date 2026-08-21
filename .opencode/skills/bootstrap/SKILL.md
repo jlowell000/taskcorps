@@ -14,7 +14,7 @@ Initialize a project (default: current working directory) as a scrum team partic
 2. **Copy the team** — from the baseline (this repo) into the target:
      - `AGENTS.md`, `CLAUDE.md`, `opencode.json`
      - `.opencode/agents/*`, `.opencode/skills/*`, `.opencode/commands/*`
-     - `.team/scripts/` — team utility scripts (untracked; copied alongside .team/)
+     - `.opencode/scripts/` — team utility scripts (copied alongside team files)
     Preserve file names; content comes from the baseline working tree.
 3. **Discover the project** — capture facts into `.team/context/`:
     - `stack.md`: language(s), runtime, package manager, entry points
@@ -26,7 +26,7 @@ Initialize a project (default: current working directory) as a scrum team partic
     `.opencode/templates/` skeletons and append `.team/` to `.gitignore`.
     **Agent files are optionally git-ignored.** In a **non-baseline** repo, default to NOT
     committing the agent files (`AGENTS.md`, `CLAUDE.md`, `opencode.json`, `.opencode/`) — the
-    project's remote may not want the team tooling. Run `.team/scripts/ignore-team.sh --ignore` (the
+     project's remote may not want the team tooling. Run `.opencode/scripts/ignore-team.sh --ignore` (the
     default) to append those rules; offer `--track` if the user wants them committed. In the
     **baseline** repo itself the agent files ARE tracked (they are the source of truth) — do not
     ignore them there. Ask the user once if unsure; never silently change their `.gitignore`.
