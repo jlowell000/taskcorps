@@ -10,3 +10,9 @@
 # Python
 __pycache__/
 *.pyc
+
+# Taskcorps agent files — NOT tracked (tooling; remotes may not want them)
+AGENTS.md
+CLAUDE.md
+opencode.json
+.opencode/

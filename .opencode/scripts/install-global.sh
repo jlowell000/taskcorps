@@ -42,17 +42,17 @@ copy_file() { # src dst
 }
 
 copy_tree() { # src_dir dst_dir
-  # Copies all files from src_dir into dst_dir, creating dst_dir if needed.
-  # Does NOT recurse into subdirectories of src_dir (flat copy).
+  # Copies all files and directories from src_dir into dst_dir, creating dst_dir if needed.
+  # Recurses into subdirectories of src_dir.
   mkdir -p "$2"
   local src="$1" dst="$2" count=0
   for f in "$src"/*; do
     [ -e "$f" ] || continue
-    if cp -p "$f" "$dst/"; then
+    if cp -rp "$f" "$dst/" 2>/dev/null; then
       count=$((count + 1))
     fi
   done
-  note "  + $count file(s) → $(basename "$dst")/"
+  note "  + $count item(s) → $(basename "$dst")/"
 }
 
 # Surgical AGENTS.md merge: replace baseline-owned content above the marker,
@@ -165,6 +165,13 @@ run_adapters_for_target() { # target_type source_dir target_dir agents_md
 # --- install into an opencode target -----------------------------------------
 install_opencode() { # target_dir
   local target="$1"
+
+  # Skip if target is the baseline itself (already has these files)
+  if [ "$target" = "$ROOT" ] || [ "$target" = "$ROOT/.opencode" ]; then
+    note "== Skipping opencode target: $target (is baseline) =="
+    return 0
+  fi
+
   note "== Installing into opencode target: $target =="
 
   # Create target subdirs
@@ -208,6 +215,13 @@ install_opencode() { # target_dir
 # --- install into a deepseek target ------------------------------------------
 install_deepseek() { # target_dir
   local target="$1"
+
+  # Skip if target is the baseline itself (already has these files)
+  if [ "$target" = "$ROOT" ]; then
+    note "== Skipping deepseek target: $target (is baseline) =="
+    return 0
+  fi
+
   note "== Installing into deepseek target: $target =="
 
   # Create target subdirs (new layout for taskcorps reference docs)
@@ -289,6 +303,8 @@ fi
 # Opencode project-local
 for d in "$HOME"/Projects/*/.opencode; do
   [ -d "$d" ] || continue
+  # Skip the baseline itself
+  [ "$(cd "$d" && pwd)" = "$ROOT" ] && continue
   local project
   project=$(basename "$(dirname "$d")")
   TARGETS+=("opencode|$d")
@@ -298,6 +314,8 @@ done
 # Deepseek project-local
 for d in "$HOME"/Projects/*/.agents; do
   [ -d "$d" ] || continue
+  # Skip the baseline itself
+  [ "$(cd "$d" && pwd)" = "$ROOT" ] && continue
   local project
   project=$(basename "$(dirname "$d")")
   TARGETS+=("deepseek|$d")
