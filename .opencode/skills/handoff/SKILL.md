@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: The team's inter-agent communication protocol. Use when reading or writing any document under .team/ — handoff blocks, status/backlog updates, task artifacts, or federation state — to produce consistent, compact, gated handoffs.
+description: The team's inter-agent communication protocol. Use when reading or writing any document under .team/ — handoff blocks, status/backlog updates, task artifacts — to produce consistent, compact, gated handoffs.
 ---
 
 # Handoff Protocol
@@ -21,6 +21,10 @@ Every document in `.team/` is a handoff. The protocol is the only interface betw
   - **RED:N/A checklist:** if this is a test-only additive task where the implementation already
     exists, coder must document `RED: N/A` with justification in `impl.md` before returning
     `READY_FOR_TESTER`. Tester verifies this documentation is present.
+  - **Handoff-block gate:** before advancing any stage, verify the current stage's artifact
+    contains the required handoff block (status token, deltas, next-owner note, gating
+    decision). For `impl.md`, also require RED evidence (or `RED: N/A` with justification).
+    Missing or incomplete → send back to the responsible role before advancing.
 
 ## Tight-context contract (all agents)
 
@@ -53,11 +57,8 @@ prompt, or checkpoint instead of passing by path, use the **TOON format** via th
   - ````
 - Use the header template pattern: `items[N]{field1,field2,field3}:`
 - `[N]` must match the row count
-- Convert with `.team/scripts/toon_table.py --encode` (markdown table → TOON) or the
-  `toon-format` skill's CLI (`npx @toon-format/cli`) for JSON↔TOON
-- For team markdown tables, `.team/scripts/toon_table.py` is the bridge:
-  - Encode: `python .team/scripts/toon_table.py --encode table.md -o table.toon`
-  - Decode: `python .team/scripts/toon_table.py --decode table.toon -o table.md`
+- Convert with the `toon-format` skill's CLI (`npx @toon-format/cli`) for JSON↔TOON or
+  markdown table → TOON conversion
 - Auto-detects delimiter (comma or tab) based on cell content; tab is used when
   any cell contains a comma
 - Prefer path-based passing (the tight-context contract) unless the receiving

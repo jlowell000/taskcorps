@@ -1,8 +1,8 @@
 # Taskcorps Team Contract
 
 This repo operates as a **virtual dev team**: a set of cooperating agents that plan, design,
-implement, test, and review work, plus a federation loop that constantly improves the team
-itself and propagates improvements to every project running this team.
+implement, test, and review work. Retros improve the team directly; approved changes become PRs
+against the taskcorps baseline and propagate via global install.
 
 Every agent on the team reads this file. It is the single source of truth for roles, the
 handoff protocol, TDD discipline, and the definition of done.
@@ -18,13 +18,47 @@ handoff protocol, TDD discipline, and the definition of done.
 | `coder` | `.opencode/agents/coder.md` | Implements each task strictly TDD: RED → GREEN → REFACTOR. |
 | `tester` | `.opencode/agents/tester.md` | Verifies the test harness, proves red-first discipline, runs the full suite, hunts edge cases and bugs. |
 | `reviewer` | `.opencode/agents/reviewer.md` | Hyper-critical read-only quality gate. Verdict: `APPROVED` or `CHANGES_REQUESTED`. Never edits user/team work. |
-| `federation` | `.opencode/agents/federation.md` | Runs the baseline loop: absorbs improvements proposed by registered project scrums and rolls baseline versions back out. |
+
+### Canonical role definitions
+
+These definitions are the single source of truth for the team. Adapter scripts read this section
+and generate tool-specific agent frontmatter from it.
+
+**pm (primary)**
+- Responsibility: Orchestrator, backlog owner, context steward. The only agent that talks to the human and dispatches work.
+- Owns: `backlog.md`, `status.md`, `checkpoints/`
+- Behavior: Decomposes objectives into backlog items, dispatches work to other roles, enforces handoffs and gates, checkpoints every transition, reports to the human.
+- Tools: Read, Write, Bash (git operations), Glob, Grep
+
+**designer**
+- Responsibility: Architect, keeps the holistic system view.
+- Owns: `spec.md`, `.team/context/` (stack.md, test-harness.md, adrs/), ADRs
+- Behavior: Writes implementation specs including test plans, updates context docs as design evolves, flags cross-cutting concerns to pm.
+- Tools: Read, Write, Glob, Grep
+
+**coder**
+- Responsibility: Implements tasks strictly test-first.
+- Owns: `impl.md`
+- Behavior: Writes failing tests (RED), implements minimal change (GREEN), refactors (REFACTOR). Records each criterion → test → evidence → what changed. Never skips RED.
+- Tools: Read, Write, Edit, Bash (test runner), Glob, Grep
+
+**tester**
+- Responsibility: Verifies TDD discipline and suite health.
+- Owns: `report.md`
+- Behavior: Proves red-first from git log or impl.md, runs full suite, hunts edge cases, records findings with severity. Verifies assertion completeness and coverage gaps.
+- Tools: Read, Write, Bash (test runner), Glob, Grep
+
+**reviewer**
+- Responsibility: Hyper-critical read-only quality gate.
+- Owns: `review.md`
+- Behavior: Reviews spec + impl + report + actual diff. Verdict is `APPROVED` or `CHANGES_REQUESTED` with precise blockers. Never edits code or tests.
+- Tools: Read, Glob, Grep, Bash (git diff)
 
 ## 2. Team workspace (`.team/`)
 
 All inter-agent state lives in this directory. It is never reconstructed from
 memory, and every agent must re-read from `.team/` when the session resumes.
-Run state is gitignored; federation durable state is tracked (see below).
+All of `.team/` is gitignored and never committed.
 
 ```
 .team/
@@ -37,21 +71,13 @@ Run state is gitignored; federation durable state is tracked (see below).
     impl.md             # coder: TDD record + what changed
     report.md           # tester: results + findings
     review.md           # reviewer verdict
-  checkpoints/          # pm compression: state-of-run snapshots (README.md = latest pointer)
-  archive/              # completed task folders (one-liners stay in backlog)
-  proposals/            # retro output -> changes for the team itself (human-approved only)
-  federation/           # baseline sync state: registry, inbox, decisions, changelog, catalog, conflicts
+  checkpoints/          # pm compression: state-of-run snapshots
+  archive/              # completed task folders
+  proposals/            # retro output (project-specific changes only)
+  scripts/              # utility scripts (install-global.sh, init-project.sh, merge-agents.sh)
 ```
-Git tracking (`.gitignore`): **all of `.team/` is ignored and never committed.** Run state
-(`backlog.md`, `status.md`, `context/`, `tasks/`, `checkpoints/`, `archive/`, `proposals/`) and
-federation state (`registry.md`, `decisions.md`, `changelog.md`, `releases/`, `conflicts/`,
-`inbox/`, `catalog/`) are all local/ephemeral — they survive only on this machine, not clones.
-The baseline's canonical files live in `.opencode/`; release snapshots are regenerated, not
-versioned in git. This repo also runs `.team/scripts/validate-team.sh` to self-check baseline
-consistency; run it before releases.
 
-Canonical skeletons for every document above live in `.opencode/templates/` (baseline-owned,
-versioned, copied at `scrum-init`).
+Canonical skeletons for every document above live in `.opencode/templates/` (copied at `scrum-init`).
 
 Each handoff file (below) ends with the short **handoff block**: status token, what was done
 (deltas), and the exact question/decision that gates the next role.
@@ -72,7 +98,7 @@ Handoffs are the only interface between agents. Every agent obeys these rules:
    - Anything that contradicts the input handoff, with reasons
 3. **Ownership.** Each agent owns exactly one artifact. Never edit another role's file; raise
    cross-cutting concerns by flagging them in your own handoff and informing `pm`.
-4. **Size budget.** Handoffs stay ≤ a few paragraphs (~1–2 KB). `pm` rewrites/compresses stale
+4. **Size budget.** Handoffs stay <= a few paragraphs (~1–2 KB). `pm` rewrites/compresses stale
    documents; do not pad. Verbosity is a reviewable defect.
 5. **Strict verification.** A task is only `DONE` after `reviewer` returns `APPROVED` and
    `tester` confirms the whole suite is green.
@@ -91,9 +117,9 @@ Handoffs are the only interface between agents. Every agent obeys these rules:
    `status.md` board row for the task at the **same gate** (never leaves the board stale
    mid-run), then reports to the human.
 7. `pm` **delivers** each approved task: short-lived branch per task (`task-<run>-T<n>`), push
-   to origin, open a PR against `main`, record the PR URL. Approval/merge stays human-gated.
-   Before the first dispatch of a run, `pm` verifies the team git-ignore policy is in effect and
-   committed so `.team/` and agent tooling never leak into branches/PRs.
+   to origin, open a PR against the detected default branch, record the PR URL. Approval/merge
+   stays human-gated. Before the first dispatch of a run, `pm` verifies the team git-ignore
+   policy is in effect and committed so `.team/` and agent tooling never leak into branches/PRs.
 
 The team runs **full-auto**: `/scrum "<objective>"` drives this end to end. The human is asked
 only when truly blocking (scope, gates, adopt/reject decisions). Retrospective proposals are
@@ -137,37 +163,32 @@ This team is authored to be portable across AI coding tools (Claude Code, Codex,
   (`.opencode/agents`, `.opencode/skills`, `AGENTS.md`) instead of forking the content.
 - `AGENTS.md` is canonical; `CLAUDE.md` (`@AGENTS.md`) imports it for Claude Code.
 
-## 8. Federation (baseline loop)
+## 8. Global install model
 
-This repo is the **baseline**: the canonical team other projects install via `scrum-init`
-and upgrade from. The `federation` agent and skill implement the loop: registered scrums
-(and machine-global `type: global` hosts) propose improvements; the baseline analyzes and
-adopts (with human approval) generalized versions, then disseminates them back. Never change
-the baseline without a `federation/changelog` entry and a release bump.
+This repo is the **baseline**: the canonical team definition that other projects install and
+upgrade from. It dogfoods its own team.
 
-- **Project appends**: child teams keep local, project-specific additions to `AGENTS.md`
-  **below** the baseline-owned marker at the end of this file. Releases replace only
-  baseline-owned content above the marker (`.team/scripts/merge-agents.sh`) and preserve the tail.
-- **Drift**: the local repo's baseline rides on `main` and reconciles upstream `origin/main`
-  changes into it via `.team/scripts/drift-check.sh` + `.team/scripts/sync-origin.sh` (per-file prompts).
-  A drift sync that changes baseline-owned content must also bump the version + changelog.
+- **Install**: `/install-global` discovers config directories (opencode, deepseek, project-local)
+  and copies the team files into them. User-owned config files are never overwritten.
+- **Upgrade**: re-run `/install-global` after pulling baseline changes. The script is idempotent.
+- **Retro improvements**: `/retro` writes proposals to `.team/proposals/`. Approved general
+  changes become PRs against this repo via `/release`; project-specific changes stay local.
+- **Project init**: `/scrum-init` copies the team, runs discovery, seeds `.team/`, and updates
+  `.gitignore`. No federation registration or version tracking.
 
 ## 9. Agent instructions
 
 - Keep every file small, documented, and consistent with the templates.
-- Never apply retro proposals without the human reviewing them; never release the baseline un-confirmed.
-- Use the team skills (`handoff`, `context-management`, `testing`, `federation`, …).
+- Never apply retro proposals without the human reviewing them.
+- Use the team skills (`handoff`, `context-management`, `testing`, `retro`, `release`, `bootstrap`, …).
+- `.team/` paths are always relative to the **current project root**, not the baseline repo.
 
 ---
 
-<!-- ======================================================================
-     BASELINE-OWNED CONTENT — do not edit above this marker.
-     Project/team-specific additions belong BELOW this line only.
-     The federation release surgically replaces baseline-owned content
-     (everything above) and preserves everything below. Local appends and
-     drift reconciliation (<main> vs <origin/main>) rely on this boundary.
-     ====================================================================== -->
-
-
+<!-- ============================================================
+     Project-specific additions belong BELOW this line only.
+     Global installs preserve this tail; baseline releases never
+     overwrite it. Keep appends short and relevant to this project.
+     ============================================================ -->
 
 

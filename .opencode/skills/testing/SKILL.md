@@ -75,16 +75,16 @@ Only verified findings go in "Findings"; unverified suspicions go in "Risks".
  - Handoff block: READY_FOR_REVIEW | BACK_TO_CODER
  ```
 
- ## Rules
+  ## Rules
 
- - Never relax, delete, or skip tests to get green; flag the problem instead.
- - Never claim a full-suite pass unless you ran the full suite on final code.
- - Tests may be edited only by coder (during TDD) or tester (with every change documented in
-   `report.md`).
- - **No ephemeral task-folder paths in tests.** Tests must reference durable records
-   (`.team/context/adrs/`, committed fixtures, or stable source files) — never
-   `.team/tasks/<id>/` paths, which move to `.team/archive/` when a task completes and break
-   the suite later.
+  - Never relax, delete, or skip tests to get green; flag the problem instead.
+  - Never claim a full-suite pass unless you ran the full suite on final code.
+  - Tests may be edited only by coder (during TDD) or tester (with every change documented in
+    `report.md`).
+  - **No ephemeral task-folder paths in tests.** Tests must reference durable records
+    (`.team/context/adrs/`, committed fixtures, or stable source files) — never
+    `.team/tasks/<id>/` paths, which move to `.team/archive/` when a task completes and break
+    the suite later.
   - **Pre-existing defects:** if you discover a pre-existing defect during task execution, record
     it in the `Pre-existing defects` section of `report.md`. pm will add it to `.team/backlog.md`
     as a tracked item. Do not silently document and forget defects.
@@ -93,3 +93,19 @@ Only verified findings go in "Findings"; unverified suspicions go in "Risks".
     (a) write a new failing test and commit it as RED before the fix, or (b) document why a new
     RED is impossible and get pm approval. Tester verifies RED evidence exists for every
     production code change in the task.
+  - **Assertion completeness:** verify that each test's assertions match its name and docstring
+    claims. A test named `test_foo_returns_bar` that asserts `result is not None` is incomplete.
+  - **Edge-case coverage:** for each edge case listed in the spec's test plan, verify a
+    corresponding unit test exists. If an edge case is verified manually but not unit-tested,
+    document it in `report.md` as a coverage gap.
+  - **External command robustness:** if a test invokes an external command via `subprocess.run`
+    or similar, verify the command exists and is installed in the test environment. Prefer
+    stdlib (`pathlib`, `re`) over external commands for source-scan tests.
+  - **CI/test self-containment:** CI tests must be self-contained and not depend on gitignored
+    or local config files. If a test requires a config file, provide it via a fixture or temp
+    file in the test itself.
+  - **Integration test self-containment:** integration tests (including Docker tests) must be
+    self-contained, creating their own temp configs/data inside the test. Do not depend on
+    repo-mounted configs that may not exist in CI.
+  - **Reusable test helpers:** document reusable test helpers for common patterns (e.g., Docker
+    temp config creation) in this skill so future tasks use consistent, self-contained patterns.

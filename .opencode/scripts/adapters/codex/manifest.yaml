@@ -1,0 +1,16 @@
+name: codex
+description: Generate OpenAI Codex agent TOML files
+priority: 10
+requires:
+  python: ">=3.11"
+generates:
+  - type: agent_frontmatter
+    source: .opencode/agents/
+    target: .codex/agents/
+  - type: config
+    target: config.toml
+    generator: configs.py
+  - type: commands
+    source: .opencode/commands/
+    target: .codex/commands/
+    transformer: commands.py

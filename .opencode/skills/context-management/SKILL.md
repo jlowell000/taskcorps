@@ -13,10 +13,10 @@ The durable home of all team state is `.team/`. Chat memory is not durable state
    - Every handoff document ≤ ~1–2 KB. When one grows (say after 2–3 rounds of edits),
      compress it: history moves to a `## History` one-liner, decisions stay.
    - Keep `backlog.md` and `status.md` tight: one line per completed task in `backlog.md`.
-   - When inlining tabular data into checkpoints, summaries, or dispatches, convert
-     markdown tables to **TOON format** (via `.team/scripts/toon_table.py --encode` or the
-     `toon-format` skill) to reduce token cost by 30–70%. Canonical on-disk format
-     stays markdown; TOON is the transport form.
+    - When inlining tabular data into checkpoints, summaries, or dispatches, convert
+      markdown tables to **TOON format** (via the `toon-format` skill's CLI: `npx @toon-format/cli`)
+      to reduce token cost by 30–70%. Canonical on-disk format
+      stays markdown; TOON is the transport form.
 2. **Checkpoints at every gate**
    Every run has a run id (`YYYYMMDD-<objective-slug>`), created by pm at `/scrum` start and
    recorded in `.team/checkpoints/README.md` as the `latest` pointer. After every stage

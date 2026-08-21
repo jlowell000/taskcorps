@@ -1,0 +1,16 @@
+name: cursor
+description: Generate Cursor IDE agent files with Cursor frontmatter
+priority: 10
+requires:
+  python: ">=3.11"
+generates:
+  - type: agent_frontmatter
+    source: .opencode/agents/
+    target: .cursor/agents/
+  - type: config
+    target: .cursor/settings.json
+    generator: configs.py
+  - type: commands
+    source: .opencode/commands/
+    target: .cursor/commands/
+    transformer: commands.py

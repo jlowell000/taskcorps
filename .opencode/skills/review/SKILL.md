@@ -25,6 +25,8 @@ before stalling.
 - [ ] **Spec compliance**: implementation matches `spec.md`; deviations present in `impl.md`
       with justification. Undocumented drift = blocker.
 - [ ] **Report honesty**: `report.md` shows an actual suite run on final code, real counts.
+- [ ] **Impl accuracy**: `impl.md` test counts match the actual run output. If counts differ,
+      request coder correction before approval.
 - [ ] **Quality**: duplication, naming, complexity, dead code, premature abstraction.
 - [ ] **Security & robustness**: injection, secret leakage, input validation, resource
       handling, concurrency.

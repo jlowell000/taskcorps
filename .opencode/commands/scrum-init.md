@@ -1,7 +1,5 @@
 ---
 description: Initialize a project into the scrum team: install the team files, run discovery, seed .team/ state, and establish a green test baseline.
-agent: pm
-subtask: true
 ---
 
 Run the `bootstrap` skill to initialize the target project into the scrum team.
@@ -15,7 +13,7 @@ harness exists, plan to seed a `T0 — establish minimal test harness` backlog i
 dependency for all feature work. Do not destructively overwrite anything without asking me first.
 
 **Git-ignore of agent files:** in a non-baseline repo, default to NOT committing the agent
-files (`AGENTS.md`, `CLAUDE.md`, `opencode.json`, `.opencode/`) via `.team/scripts/ignore-team.sh
+files (`AGENTS.md`, `CLAUDE.md`, `opencode.json`, `.opencode/`) via `.opencode/scripts/ignore-team.sh
 --ignore` — the remote may not want the team tooling. Offer `--track` if the user prefers them
 committed. In the baseline repo itself they ARE tracked; do not ignore them there. Ask before
 changing the target's `.gitignore`.

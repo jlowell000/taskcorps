@@ -1,0 +1,18 @@
+name: configs
+description: Generate tool-specific configuration files during install
+priority: 5
+requires:
+  python: ">=3.11"
+generates:
+  - type: config
+    target: opencode.json
+    generator: configs.py
+  - type: config
+    target: .claude/settings.json
+    generator: configs.py
+  - type: config
+    target: .cursor/settings.json
+    generator: configs.py
+  - type: config
+    target: config.toml
+    generator: configs.py

@@ -1,0 +1,13 @@
+name: deepseek
+description: Install taskcorps files as reference docs for Deepseek Harness
+priority: 10
+requires:
+  python: ">=3.11"
+generates:
+  - type: reference_docs
+    source: .opencode/
+    target: .agents/notes/
+  - type: commands
+    source: .opencode/commands/
+    target: .agents/notes/commands/
+    transformer: commands.py

@@ -1,0 +1,17 @@
+name: opencode
+description: Inject OpenCode-specific frontmatter into canonical agent files
+priority: 10
+requires:
+  python: ">=3.11"
+generates:
+  - type: agent_frontmatter
+    source: .opencode/agents/
+    target: .opencode/agents/
+    in_place: true
+  - type: config
+    target: opencode.json
+    generator: configs.py
+  - type: commands
+    source: .opencode/commands/
+    target: .opencode/commands/
+    transformer: commands.py

@@ -1,0 +1,16 @@
+name: claude-code
+description: Generate Claude Code agent files with Claude Code frontmatter
+priority: 10
+requires:
+  python: ">=3.11"
+generates:
+  - type: agent_frontmatter
+    source: .opencode/agents/
+    target: .claude/agents/
+  - type: config
+    target: .claude/settings.json
+    generator: configs.py
+  - type: commands
+    source: .opencode/commands/
+    target: .claude/commands/
+    transformer: commands.py

@@ -41,10 +41,6 @@ When invoked, this skill teaches Claude Code:
 ```
 .
 ├── SKILL.md                 # Skill descriptor and core patterns
-├── CLAUDE.md                # Guidance for Claude Code working in this repo
-├── scripts/
-│   ├── toon_convert.py      # Python wrapper for TOON CLI
-│   └── README.md            # Wrapper usage guide
 └── reference/               # Detailed reference documentation
     ├── when-to-use.md       # Decision guide: TOON vs JSON
     ├── cli.md               # Official CLI reference
@@ -66,15 +62,6 @@ npx @toon-format/cli input.toon -o output.json
 
 # With token stats and tab delimiter (most efficient)
 npx @toon-format/cli input.json --delimiter "\t" --stats -o output.toon
-```
-
-**Using the Python wrapper:**
-```bash
-# Encode with auto-detection
-python scripts/toon_convert.py --encode input.json -o output.toon
-
-# Decode with fence extraction from Markdown
-cat doc.md | python scripts/toon_convert.py --decode --extract-fences > data.json
 ```
 
 ## How Claude Code Uses This Skill

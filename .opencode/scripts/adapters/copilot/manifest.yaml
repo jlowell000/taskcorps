@@ -1,0 +1,9 @@
+name: copilot
+description: Merge taskcorps AGENTS.md into GitHub Copilot instructions
+priority: 10
+requires:
+  python: ">=3.11"
+generates:
+  - type: reference_docs
+    source: .opencode/
+    target: .github/

@@ -59,8 +59,12 @@ unambiguous across runs and makes checkpoints/archive references collision-free.
   - No "should be nice" or "handle errors well" — say *which* errors and *how* they are handled.
   - Every criterion must be mappable to at least one test in the designer's test plan.
   - **Disambiguate fallback wording:** if a brief or acceptance criterion includes an "or X if we add one" fallback (e.g., error types, helper names, module boundaries), make a binary choice during decomposition and write the chosen option into the brief. Never dispatch a brief with unresolved "or" options to the designer.
-  - **Line-count precision:** if a brief specifies a line-count constraint (e.g., "≤ N lines"), it must also specify the counting method: "≤ N physical lines" or "≤ N non-blank lines". Add this to the brief during decomposition if missing.
-  - **Type-check strictness:** if a brief includes type-checking acceptance criteria (e.g., "mypy passes"), pin the exact config and scope in the brief (e.g., `mypy --config-file mypy.ini <module>` with `disallow_untyped_defs = true`). Never leave strictness unspecified.
+   - **Line-count precision:** if a brief specifies a line-count constraint (e.g., "≤ N lines"), it must also specify the counting method: "≤ N physical lines" or "≤ N non-blank lines". Add this to the brief during decomposition if missing.
+   - **Type-check strictness:** if a brief includes type-checking acceptance criteria (e.g., "mypy passes"), pin the exact config and scope in the brief (e.g., `mypy --config-file mypy.ini <module>` with `disallow_untyped_defs = true`). Never leave strictness unspecified.
+   - **Edge-case consistency:** when a brief specifies edge-case behavior for one function in a family (e.g., empty-input short-circuit), the designer must explicitly confirm whether the same behavior applies to all siblings or document the divergence in the spec.
+   - **Protocol return types:** if the spec involves Protocol classes, the designer must pin concrete return types for every method in the spec. Do not leave return types as `Any` when the spec implies concrete types.
+   - **CI/test self-containment:** CI tests must be self-contained and not depend on gitignored or local config files. If a test requires a config file, provide it via a fixture or temp file in the test itself.
+   - **Integration test self-containment:** integration tests (including Docker tests) must be self-contained, creating their own temp configs/data inside the test. Do not depend on repo-mounted configs that may not exist in CI.
 
 ## Status transitions (owned by pm)
 
